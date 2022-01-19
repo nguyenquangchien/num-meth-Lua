@@ -1,0 +1,45 @@
+   1 : -- File list12_21.lua --
+   2 : -- Simple Example of BV problem in 2 dimensions -- rectangular grid 
+   3 : 
+   4 : require"pde2bv"; require"spgauss"; require"sdgauss"
+   5 : getfenv(spgauss).nprint=1; getfenv(spgauss).usage=2
+   6 : 
+   7 : Vm = 1.0 -- Define equations to be solved
+   8 : feq = function(x,y,uxx,ux,u,uy,uyy,i,j)
+   9 : 	return uxx + uyy -- Poisson's equation
+  10 : end
+  11 : fb = function(x,u,uy,ux,i) return u end -- 0 at bottom
+  12 : ft = function(x,u,uy,ux,i) return u - Vm end -- Vm at top
+  13 : fr = function(y,u,ux,uy,j) return ux end -- zero derivatives
+  14 : fl = function(y,u,ux,uy,j) return ux end
+  15 : 
+  16 : x,y,u = {},{},{}; xmax,ymax = 1.0,1.0
+  17 : Nx,Ny = 40,40 -- 40 by 40 uniform grid
+  18 : nx,ny = Nx+1,Ny+1
+  19 : for i=1,nx do x[i] = xmax*(i-1)/Nx end
+  20 : for i = 1,ny do y[i] = ymax*(i-1)/Ny end
+  21 : for j = 1,ny do	-- Set zero initial values
+  22 : 	u[j] = {}
+  23 : 	for i = 1,nx do u[j][i] = 0 end
+  24 : end
+  25 : -- Set up matrix equations
+  26 : a,b = setup2bveqs({feq,fb,ft,fl,fr},x,y,u)
+  27 : 
+  28 : _,_,nel = spgauss(a,b) -- Collect usage statistics
+  29 : print('max #matrix elements = ',nel[2][#nel[2]])
+  30 : bb = to2darray(b) -- Convert to x,y array
+  31 : write_data("list12_21.dat",bb)
+  32 : 
+  33 : udiff,mdiff,im,jm = {},0.0,0,0
+  34 : udiff[0] = b[0]; Vmx = b[#b]
+  35 : for j=1,ny do -- Calculate error in solution
+  36 : 	for i=1,nx do 
+  37 : 		m = i + (j-1)*nx
+  38 : 		udiff[m] = math.abs((Vmx*(j-1)/(ny-1)) - b[m])
+  39 : 		if udiff[m]>mdiff then mdiff,im,jm = udiff[m],i,j end
+  40 : 	end
+  41 : end
+  42 : print('max error = ',mdiff, '\nat j,i = ',jm,im)
+  43 : sdsav = to2darray(udiff) -- 2D Array of errors
+  44 : write_data('tmp12_21a.dat',sdsav) -- Save errors
+  45 : write_data('tmp12_21b.dat',nel) -- Save fill statistics

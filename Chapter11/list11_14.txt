@@ -1,0 +1,82 @@
+   1 : -- /* File odebvfd.lua */
+   2 : 
+   3 : odebv1fd = function(eqs,x,u)
+   4 : 	local s,up,upp,e,f,du = {},{},{},{},{},{}
+   5 : 	local fval,fu,fup,fupp,uppi,upi,ui,xi,duu
+   6 : 	local fctupp,fctup,fctu = FACT,FACT,FACT
+   7 : 	local feq,nx = eqs[1], #x
+   8 : 	local nxm1,nend = nx-1, NMAX
+   9 : 	for i=1,nx-1 do s[i] = x[i+1] - x[i] end
+  10 : 	
+  11 : 	bound = function(nb,nxb) -- Function to evaluate specified boundary conditions
+  12 : 		upi,ui,xi = up[nxb],u[nxb],x[nxb] -- boundary values
+  13 : 		fval = eqs[nb](ui,upi)
+  14 : 		fup = (eqs[nb](ui,upi+fctup) - fval)/fctup
+  15 : 		fu = (eqs[nb](ui+fctu,upi) - fval)/fctu
+  16 : 	end
+  17 : 	
+  18 : 	for j=1,NMAX do -- Major loop for iterative solution
+  19 : 		fctupp,fctup = 0,0
+  20 : 		for i=2,nx-1 do -- Calculate second derivative and first derivative for present itteration
+  21 : 			si,sisi,alfi = s[i],(s[i]+s[i-1]),s[i]/s[i-1]
+  22 : 			duu = 2*(u[i+1] - (alfi+1)*u[i] + alfi*u[i-1])/(si*sisi)
+  23 : 			upp[i],fctupp = duu, fctupp+abs(duu)
+  24 : 			duu = (u[i+1] + (alfi^2-1)*u[i] -alfi^2*u[i-1])/(alfi*sisi)
+  25 : 			up[i],fctup = duu, fctup+abs(duu)
+  26 : 		end
+  27 : 		alfi = s[2]/s[1] -- Handle end points as special cases, lower boundary
+  28 : 		upp[1] = upp[2] - (upp[3]-upp[2])/alfi 
+  29 : 		up[1] = (-u[3] + u[2]*(1+alfi)^2 - u[1]*(2/alfi+1))/(alfi*(s[2]+s[1]))
+  30 : 		alfi = s[nxm1]/s[nx-2] -- Upper boundary
+  31 : 		upp[nx] = upp[nxm1] + (upp[nxm1]-upp[nxm1-1])*alfi
+  32 : 		up[nx] = (u[nx]*(1+2*alfi) - u[nxm1]*(1+alfi)^2 + u[nx-2]*alfi^2)/(alfi*(s[nxm1]+s[nx-2]))
+  33 : 		fctupp,fctup = FACT*fctupp/nx, FACT*fctup/nx
+  34 : 		if fctupp==0 then fctupp = FACT end -- Try to protect against 0 values
+  35 : 		if fctup==0 then fctup = FACT end
+  36 : 		bound(2,1) -- Evaluate lower boundary conditions -- fval,fu,fup calculated for boundary
+  37 : 		duu = fup - fu*s[1] -- Determines first values of e and f
+  38 : 		e[2],f[2] = fup/duu, fval*s[1]/duu
+  39 : 		for i=2,nx-1 do -- Set up a,b,c,d arrays and save e and f as arrays -- do not need to save a,b,c,d
+  40 : 			uppi,upi,ui,xi = upp[i],up[i],u[i],x[i]
+  41 : 			fval = feq(xi,ui,upi,uppi)
+  42 : 			fupp = (feq(xi,ui,upi,uppi+fctupp) - fval)/fctupp -- Probe upp factor
+  43 : 			fup = (feq(xi,ui,upi+fctup,uppi) - fval)/fctup -- Probe up factor
+  44 : 			fu = (feq(xi,ui+fctu,upi,uppi) - fval)/fctu -- Probe u factor
+  45 : 			si,sisi,alfi = s[i],(s[i]+s[i-1]),s[i]/s[i-1]
+  46 : 			ai = (2*fupp/si - fup)*alfi/sisi
+  47 : 			bi = fu - (2*(alfi+1)*fupp/si - (alfi^2-1)*fup/alfi)/sisi
+  48 : 			ci,di = (2*fupp/s[i] + fup/alfi)/sisi, fval
+  49 : 			-- Forward reduction of tridiagonal system
+  50 : 			gi = 1/(ai*e[i] + bi)
+  51 : 			e[i+1],f[i+1] = -gi*ci, -gi*(di + ai*f[i])
+  52 : 		end
+  53 : 		
+  54 : 		bound(3,nx) -- Evaluate upper boundary conditions -- fval,fu,fup calculated for boundary
+  55 : 		-- Now back substitute for correction values
+  56 : 		du[nx] = -(fval*s[nxm1] - f[nx]*fup)/(fu*s[nxm1] + fup*(1-e[nx])) -- End point correction from boundary conditions
+  57 : 		for i=nx,2,-1 do  -- Calculate correction values at all points using e and h arrays
+  58 : 			du[i-1] = e[i]*du[i] + f[i]
+  59 : 		end
+  60 : 		-- Now update solution and check for desired accuracy
+  61 : 		cmax,umax,imax,fctu = 0,0,0,0
+  62 : 		for i=1,nx do
+  63 : 			c1 = abs(du[i]); if c1>umax then umax = c1 end
+  64 : 			c2 = abs(u[i]) + c1; if c2~=0.0 then c1=c1/c2 end
+  65 : 			if c1>cmax then cmax=c1; imax=i end
+  66 : 			u[i] = u[i] + du[i] -- Add corection to previous solution
+  67 : 			fctu = fctu+abs(u[i])
+  68 : 		end
+  69 : 		fctu = fctu/nx; if fctu==0 then fctu = FACT end
+  70 : 		if nprint~=0 then 
+  71 : 			printf("Iteration number %i, Maximum  relative, absolute correction = %e, %e at %i\n",j,cmax,umax,imax) 
+  72 : 			io.flush()
+  73 : 		end
+  74 : 		if cmax<ERROR then nend=j; break end
+  75 : 		if FABS~=0 then if umax<fctu*ERROR then nend=j; break end end
+  76 : 		fctu = FACT*fctu
+  77 : 	end
+  78 : 	return nend, cmax, umax -- Solution values returned in u calling array
+  79 : end
+  80 : setfenv(odebv1fd,{abs=math.abs,ERROR=1.e-6,FABS=1,FACT=1.e-3,EPXX=1.e-14,NMAX=50,nprint=0,io=io,printf=printf,
+  81 : table=table})
+ 

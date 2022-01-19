@@ -1,0 +1,46 @@
+   1 : -- /* File list12_14.lua */
+   2 : -- Program for transient solution of transmission line
+   3 : 
+   4 : require"odefd"; require"pdeivbv"
+   5 : getfenv(pdeivbv).nprint = 1
+   6 : getfenv(ode2bvfd).umin = {5.e-4,5.e-4,5.e-4}
+   7 : --getfenv(ode2bvfd).nprint = 1; getfenv(pdebivbv).nprint = 1
+   8 : 
+   9 : tt = os.time()
+  10 : -- Model equations to be solved
+  11 : Zo = 50
+  12 : Vt, Is = .026, 1.e-12 -- Thermal voltage, Sat current
+  13 : Rr = 0 -- Series resistance factor
+  14 : Rg = 0 -- Parallel conductance factor
+  15 : Rs = 100 -- Source resistance
+  16 : Rl = 100 -- Load resistance
+  17 : vs = 5.0 -- Step value of source voltage
+  18 : w = 2*math.pi; Rrg, Rrpg = Rr*Rg, Rr + Rg
+  19 : 
+  20 : eq = function(fv,x,t,v,vp,vpp,vt,vtt) -- Equations with time and spatial derivatives
+  21 : 	fv[1] = vpp[1] - Rrg*v[1] - Rrpg*vt[1] - vtt[1] -- Second order equations
+  22 : 	fv[2] = vpp[2] - Rrg*v[2] - Rrpg*vt[2] - vtt[2]
+  23 : 	end
+  24 : 
+  25 : efl = function(fv,v,vp,t,vt) -- Using mixed boundary condition
+  26 : 	fv[1] = vs*math.sin(w*t) - v[1] - Rs*v[2]
+  27 : 	fv[2] = vp[1] + Zo*(Rr*v[2] + vt[2])
+  28 : end
+  29 : efr = function(fv,v,vp,t,vt) -- Using mixed boundary condition
+  30 : 	fv[1] = v[2] - Is*(math.exp(v[1]/Vt) - 1) -- Diode at load
+  31 : 	fv[2] = Zo*vp[2] + Rg*v[1] + vt[1]
+  32 : end
+  33 : 
+  34 : x = {}; nx = 500; L = 1 -- Define x values 
+  35 : for i=1,nx+1 do x[i] = L*(i-1)/nx end
+  36 : 
+  37 : v = {{},{}} -- Set initial voltage values, V = 0, I = 0 for all x values
+  38 : for i=1,nx+1 do
+  39 : 	v[1][i] = 0; v[2][i] = 0 -- v[2] is current value
+  40 : end
+  41 : tvals = {0,10,100,40,{0,.25,.5,.75,1}} 
+  42 : s,st = pdeivbvt({eq,efl,efr},tvals,x,v,vp,vpp)
+  43 : write_data(2,'list12_14.dat',s) -- Save same number of points as before
+  44 : write_data('list12_14t.dat',st)	
+  45 : print('time taken for calculation = ',os.time()-tt); tt = os.time()
+  46 : 

@@ -1,0 +1,11 @@
+   1 : --/* File deriv.lua */ -- Derivative with Richardson's extrapolation
+ ........
+  75 : function pderiv(f,x,i)
+  76 : 	local xi,fv = x[i]
+  77 : 	local dx = xi*FACT
+  78 : 	if dx==0 then dx = FACT end
+  79 : 	x[i] = xi + dx; fv = f(x)
+  80 : 	x[i] = xi - dx; fv = (fv - f(x))/(2*dx)
+  81 : 	x[i] = xi; return fv
+  82 : end
+  83 : setfenv(pderiv,{FACT=1.e-6})

@@ -1,0 +1,21 @@
+   1 : -- /* File list8_6.lua */ -- Example of obtaining Student's t values
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : pbv = {.5,.9,.95,.99,.999} -- Define probabilities
+   6 : n = {1,2,4,6,10,20,40,120,10000} -- Define DOF's
+   7 : ts = {}
+   8 : for i=1,#n do
+   9 : 	for j=1,#pbv do
+  10 : 		ts[j] = ttable(n[i],pbv[j]) -- Get t values for table
+  11 : 	end
+  12 : 	print(ts[1],ts[2],ts[3],ts[4])
+  13 : end
+  14 :  
+  15 :  -- Following code is actually in prob.lua
+  16 : ttable = function(n,pbv)
+  17 : 	local Atf = function(x)
+  18 : 		return Atstud(x,n) - pbv
+  19 : 	end
+  20 : 	return newton(Atf,0)
+  21 : end

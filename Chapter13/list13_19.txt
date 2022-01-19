@@ -1,0 +1,49 @@
+   1 : -- File list13_19.lua -- Time dependent nonlinear diffusion
+   2 : 
+   3 : require'pde2fe' -- Input FE code
+   4 : L = 1.e-4
+   5 : nts ={readnts('list13_9',L)} -- Get node, triangle, sides data
+   6 : -- Model equations to be solved
+   7 : D00,D10,E0,E1 = 0.05, 0.95, 3.5, 3.5 -- Diffusion coeff parameters
+   8 : T = 1000+273 -- temperature
+   9 : D0 = D00*math.exp(-E0/(0.026*T/300))
+  10 : D1 = D10*math.exp(-E1/(0.026*T/300))
+  11 : ni = 7.14e18; Un = 5e20
+  12 : Um = 1.0 -- Use normalized value
+  13 : xmax,ymax = 2*L, L
+  14 : feqs = { -- Table of functions
+  15 : 	function(x,y,t,uxx,ux,u,uy,uyy,ut,utt) -- General point
+  16 : 		D = D0 + D1*Un*u/ni
+  17 : 		return D*(uxx + uyy) - ut 
+  18 : 	end,
+  19 : 	function(nd,t,u,un,ut,utt,nbs)  -- Boundary values
+  20 : 		if nbs==3 then return u - Um 
+  21 : 		else return un end
+  22 : 	end
+  23 : }  -- End general point and boundary values
+  24 : u = {}
+  25 : for k=1,#nts[1] do 
+  26 : 	if nts[1][k][3] == 3 then u[k] = Um
+  27 : 	else u[k] = 0.0 end
+  28 : end	
+  29 : 
+  30 : SPM,COE,SOR = 1, 2, 3 -- 3 solution methods 
+  31 : t = os.time()
+  32 : getfenv(pde1stp2fe1t).nprint=1
+  33 : getfenv(pde2fe1tqs).nprint=1
+  34 : getfenv(pde2fe).nprint=1
+  35 : tvals = {0,{1,1000},2,20} 
+  36 : u,errm = pde2fe1tqs(feqs,tvals,nts,u,SOR)
+  37 : print('Time taken =',os.time()-t); io.flush()
+  38 : 
+  39 : x,y = {},{}; NT = 81 -- Change as desired
+  40 : for j=1,NT do y[j] = ymax*(j-1)/(NT-1); x[j] = 2*y[j] end
+  41 : nsol = #u
+  42 : for i=1,nsol do -- Save 2D data files
+  43 : 	sfl = 'list13_19.'..i..'.dat'
+  44 : 	sol,solxy = toxysol(u[i],x,y,nts[1],nts[2])
+  45 : 	write_data(sfl,sol) 
+  46 : 	if i==nsol then 
+  47 : 		splot('list13_19a.emf',solxy); cplot('list13_19b.emf',solxy)
+  48 : 	end
+  49 : end

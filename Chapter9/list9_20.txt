@@ -1,0 +1,25 @@
+   1 : -- /* File list9_21.lua */ -- Data fitting, Parameter estimation
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : infile = 'mosiv9.20' 
+   7 : id,vd,vg,vgd,ycalc = {},{},{},{},{}
+   8 : read_data(infile..'.txt',id,vd,vg); nd = #id
+   9 : 
+  10 : ft = function(x,c) -- Define function to fit data
+  11 : 	local vgt,vd = x[3] - c[2], x[2]
+  12 : 	local vdx = 0.5*(vd+vgt - math.sqrt((vd-vgt)^2))
+  13 : 	if vgt<0 then return -x[1] end
+  14 : 	return c[1]*(vgt*vdx - 0.5*vdx^2)*(1 + c[3]*vd) - x[1]
+  15 : end
+  16 : 
+  17 : c = {1.e-4,.20,0.01};nc = #c
+  18 : --step = {2,2,2}
+  18 : 
+  19 : --- Section 2. Perform data fit and print fitted parameters
+  20 : del,err,nn = nlstsq({id,vd,vg},fw,ft,c,actv,step) -- Call fiting, print max iterations 
+  21 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  22 : for i=1,nd do ycalc[i] = newtonfc(ft,{id[i],vd[i],vg[i]},c) end
+  23 : write_data(infile..'a.dat',id,vd,vg,ycalc)
+  24 : plot(vd,id,ycalc)

@@ -1,0 +1,24 @@
+   1 : -- /* File list10_12.lua */
+   2 : -- Programs to integrate first order diff. equation using odeive()
+   3 : require"odeiv"
+   4 : 
+   5 : f1 = function(eqs,t,y,yp) -- test of sinusoidal differential eqns
+   6 : 	eqs[1] = yp[1] - y[2]
+   7 : 	eqs[2] = yp[2] + y[1]
+   8 : end
+   9 : -- TP solution with two step intervals, also error evaluation
+  10 : s1,err = odeive(f1,{0,{.01,40},{100,2000}},{1,0})
+  11 : print(errstat(err[2]));print(errstat(err[3]))
+  12 : -- Calculate exact solution, corrected solution and actual errors obtained 
+  13 : yexact,ycorrected,err1,err2,nd = {},{},{},{},#s1[1]
+  14 : for i=1,nd do yexact[i] = math.cos(s1[1][i]) end
+  15 : for i=1,nd do ycorrected[i] = s1[2][i] - err[2][i] end
+  16 : for i=1,nd do 
+  17 : 	err1[i] = math.abs(yexact[i] - s1[2][i]) -- Error in TP solution
+  18 : 	err2[i] = math.abs(yexact[i] - ycorrected[i]) -- Error in corrected solution
+  19 : end
+  20 : print(errstat(err1));print(errstat(err2))
+  21 : write_data("list10_12.dat",s1,ycorrected,err,err1,err2)
+  22 : write_data(20,"list10_121.dat",s1,ycorrected,err,err1,err2)
+  23 : plot(err)
+  24 : 

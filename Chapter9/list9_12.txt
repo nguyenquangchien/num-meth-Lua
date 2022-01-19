@@ -1,0 +1,14 @@
+   1 : -- /* File list9_12.lua */ -- General file for data fitting, Parameter estimation 
+   2 : 
+   3 : requires("nlstsq","mcpar","DataFit","cltwodim")
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : -- Change lines 6 through 14 for different data sets
+   7 : infile = 'matricpot'
+   8 : xd,yd = {},{}; read_data(infile..'.txt',xd,yd) -- x stored first
+   9 : nd = #xd
+  10 : 
+  11 : ft = function(x,c) -- Define function to fit data
+  12 : 	return  c[1]+ (c[2]-c[1])*(1 + (c[3]*x[2])^c[4])^-(1-1/c[4]) - x[1]
+  13 : end
+  14 : c = {0,.4,1,2}; nc = #c -- Initial approximations. End of changes for most data sets

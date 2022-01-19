@@ -1,0 +1,46 @@
+   1 : -- /* File list4_16.lua */ -- Simple examples of polynomial operations
+   2 : 
+   3 : Polynomial = {}; Polynomial_mt = {} -- Polynomial table and metatable
+   4 : 
+   5 : Polynomial.new = function(...) -- Creates a new Polynomial type with associated metatable
+   6 : 	return setmetatable({...},Polynomial_mt) 
+   7 : end
+   8 : Polynomial_mt.__add = function(p1,p2)
+   9 : 	local n,sum = math.max(#p1, #p2), {}
+  10 : 	for i=1,n do
+  11 : 		sum[i] = (p1[i] or 0) + (p2[i] or 0)
+  12 : 	end
+  13 : 	return setmetatable(sum,Polynomial_mt)
+  14 : end
+  15 : Polynomial_mt.__unm = function(p)
+  16 : 	local pp = {}
+  17 : 	for i=1,#p do pp[i] = -p[i] end
+  18 : 	return setmetatable(pp,Polynomial_mt)
+  19 : end
+  20 : Polynomial_mt.__sub = function(p1,p2)
+  21 : 	p2 = -p2; return p1 + p2
+  22 : end
+  23 : Polynomial_mt.__tostring = function(p) -- Returns a string in standard form a + bx +cx^2 + --
+  24 : 	s = tostring(p[1])
+  25 : 	for i=2,#p do
+  26 : 		s = s.." + ("..tostring(p[i])..")*x^"..tostring(i-1)
+  27 : 	end
+  28 : 	return s
+  29 : end
+  30 : Polynomial_mt.__mul = function(p1,p2) -- Multiplies two polynomials p1 and p2
+  31 : 	local n1,n2,pp,k,fact = #p1, #p2, {}
+  32 : 	for i=1,n1 do
+  33 : 		k,fact = i, p1[i]
+  34 : 		for j=1,n2 do
+  35 : 			pp[k],k = (pp[k] or 0) + fact*p2[j], k+1
+  36 : 		end
+  37 : 	end
+  38 : 	return setmetatable(pp,Polynomial_mt)
+  39 : end	
+  40 : 
+  41 : -- Now some examples of Polynomial operations
+  42 : p1 = Polynomial.new(1,2,3,4)
+  43 : p2 = Polynomial.new(4,3,2,1)
+  44 : print(p1); print(p2)
+  45 : p3 = p1*p2; print(p3)
+  46 : print(p1-p3)

@@ -1,0 +1,11 @@
+   1 : -- /* File list7_17.lua */
+   2 : 
+   3 : require "DataFit"
+   4 : 
+   5 : xd,yd,ycalc={},{},{}
+   6 : read_data('list7_1.dat',xd,yd) -- Read data
+   7 : fxc = datafit{yd,xd} -- Now do fit with floating knots
+   8 : for j=1,#xd do ycalc[j] = fxc(xd[j]) end -- Calculate fit values
+   9 : plot(xd,yd,ycalc) -- Plot data and fit
+  10 : write_data("list7_17.dat",xd,yd,ycalc) -- Save data 
+  11 : 

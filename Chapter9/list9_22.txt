@@ -1,0 +1,34 @@
+   1 : -- /* File list9_23.lua */ -- Data fitting, Parameter estimation
+   2 : 
+   3 : requires("nlstsq","prob")
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : infile = 'rspsurf' 
+   7 : p,gr,y,ycalc,ydata = {},{},{},{},{}
+   8 : read_data(infile..'.txt',{},p,gr,y) -- For uniformity analysis
+   9 : --read_data(infile..'.txt',{},p,gr,{},y) -- For stress analysis
+  10 : nd = #y
+  11 : 
+  12 : ft = function(x,c) -- Define function to fit data
+  13 : 	local x1,x2 = x[2],x[3]
+  14 : 	return c[1]+c[2]*x1+c[3]*x2+c[4]*x1^2+c[5]*x2^2+c[6]*x1*x2 - x[1]
+  15 : end
+  16 : 
+  17 : c = {0,0,0,0,0,0}; nc = #c
+  18 : --actv = {1,1,1,0,0,1} -- Uncomment for eliminating c[4] and c[5]
+  19 : 
+  20 : --- Section 2. Perform data fit and print fitted parameters
+  21 : del,err,nn = nlstsq({y,p,gr},fw,ft,c,actv) 
+  22 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e \t (+/-ratio)%9.4f\n',
+  23 : 	i,c[i],del[i],del[i]/math.abs(c[i])) end
+  24 : x1,x2,i = {},{},1
+  25 : for xx1=4,80.1,1 do -- Points for surface plot
+  26 : 	for xx2=2,9,.1 do
+  27 : 		x1[i],x2[i],ycalc[i],i = xx1,xx2,ft({0,xx1,xx2},c),i+1
+  28 : 	end
+  29 : end
+  30 : for i=1,nd do ydata[i] = newtonfc(ft,{y[i],p[i],gr[i]},c) end
+  31 : _,_,rsq = clinear(ydata,y)
+  32 : print('Rsquared for model = ',rsq)
+  33 : write_data(infile..'a.dat',y,p,gr,ydata,{ycalc,x1,x2})
+  34 : 

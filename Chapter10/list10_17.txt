@@ -1,0 +1,68 @@
+   1 : -- /* File odeiv.lua */
+   2 : -- Programs to integrate first order differential equations
+   3 : require"nsolv"; local atend
+---------- 
+ 148 : odeivs = function(feqs,tvals,u,up) -- Adaptive Step Size Solver
+ 149 : 	local ttvals,sa,upp,t,s1,s2 = {},{},{}
+ 150 : 	local k,ni,nit,err,fac,relerr,relmin,t1,t2,t3,h,h2,hmax,hmin,tmax
+ 151 : 	local neq,NMAX,abs = #u, getfenv(nsolv).NMAX, math.abs
+ 152 : 	local u1,u2,up1,up2,upp1,upp2 ={},{},{},{},{},{} -- Saved arrays
+ 153 : 	local NTMIN,NTMAX,TFAC,HFAC,FAC,RELERR,fe,fd,tt,nhmax = 1000,25000,1.e-6,1.e-12,.8,1.e-5,.5,1,1+1.e-12,0
+ 154 : 	if odebiv==odebrk then fe,fd = 0.25,0.2 end -- Set parameters for RK algorithm
+ 155 : 	up = up or {} -- Below is for different tvals formats
+ 156 : 	if type(tvals)=='number' then tvals = {0,tvals} end
+ 157 : 	if #tvals==1 then tvals = {0,tvals[1]} end
+ 158 : 	if type(tvals[2])=='number' then tvals[2] = {tvals[2]} end
+ 159 : 	t,tmax = tvals[1],tvals[2][1]
+ 160 : 	hmin,hmax = tvals[2][2] or (tmax-t)*HFAC, tvals[2][3] or (tmax-t)/NTMIN 
+ 161 : 	relerr = tvals[3] or RELERR*neq; relmin = relerr/5
+ 162 : 	nit,k,h = 0,1,(tmax-t)*TFAC; h2 = h/2 -- Use TFAC for initial step size
+ 163 : 	for i=1,neq+1 do sa[i] = {} end; sa[1][1] = t -- Set initial solution values
+ 164 : 	for i=1,neq do t1,t2 = u[i],up[i]; sa[i+1][1],u1[i],u2[i],up1[i],up2[i] = t1,t1,t1,t2,t2 end
+ 165 : 	while 1 do -- Major time step loop
+ 166 : 		while 1 do -- Adjust step size downward until local relative error condition met
+ 167 : 			ttvals[1],ttvals[2],ttvals[3] = t,t+h,1
+ 168 : 			s1,nx = odebiv(feqs,ttvals,u1,up1,upp1) -- One step solution
+ 169 : 			ttvals[3] = 2; s2,ni = odebiv(feqs,ttvals,u2,up2,upp2) -- Repeat using two steps
+ 170 : 			err = 0 -- Evaluate maximum relative error
+ 171 : 			for i=1,neq do
+ 172 : 				fac =  fd*abs(u2[i]-u1[i])/(abs(u1[i]) + abs(u2[i]))
+ 173 : 				if fac>err then err = fac end
+ 174 : 			end
+ 175 : 			if h==hmin then break end -- Just accept, nothing else useful to do 
+ 176 : 			if err<relerr then break end -- Accept error met
+ 177 : 			if nx==NMAX then -- Didn't converge try again at half step size
+ 178 : 				if h==hmax then hmax = hmax/2 end
+ 179 : 				h,h2 = h/2,h2/2 
+ 180 : 			elseif err==1 then h,h2 = h/2,h2/2 -- Try again at half step size
+ 181 : 			else h = (relerr/err)^fe*FAC*h; h2 = h/2 end -- Adjust step size downward and try again 
+ 182 : 			if abs(h)<abs(hmin) then h,h2 = hmin,hmin/2 end -- Use mimimum step size
+ 183 : 			for i=1,neq do t1,t2,t3 = u[i],up[i],upp[i]
+ 184 : 			u1[i],u2[i],up1[i],up2[i],upp1[i],upp2[i] = t1,t1,t2,t2,t3,t3 end -- Set to old values 
+ 185 : 		end -- loop back if relerr criteria not met
+ 186 : 		if ni==NMAX and err>relerr then -- Print warning message
+ 187 : 			print("Error at t =" ,t," : Maximum number of iterations exceeded in nsolv")
+ 188 : 			print("     Results are probably not accurate!")
+ 189 : 		end
+ 190 : 		if ni>nit then nit = ni end
+ 191 : 		for i=1,2 do -- Save valid solution values contained in s2 array -- 2 time points
+ 192 : 			k,t = k+1,t+h2; sa[1][k] = t; for j=2,neq+1 do sa[j][k] = s2[j][i+1] end 
+ 193 : 		end
+ 194 : 		if k>NTMAX then -- Limit solution to NTMAX data points (100,000 default)
+ 195 : 			print("Number of adaptive data points exceeds ",NTMAX)
+ 196 : 			print("     Best effort at solution returned!"); break
+ 197 : 		end
+ 198 : 		for i=1,neq do t1,t2,t3 = u2[i],up2[i],upp2[i]; u[i],u1[i],up[i],up1[i],upp[i],upp1[i] = t1,t1,t2,t2,t3,t3 end
+ 199 : 		if h>0 then if t>=tmax then break end -- Exit if finished, else reset parameters
+ 200 : 		elseif t<=tmax then break end -- Negative time step
+ 201 : 		if err<relmin then h = h*1.4 end -- Adjust step size upward by factor of 1.4
+ 202 : 		if abs(h)>abs(hmax) then 
+ 203 : 			h = hmax; nhmax = nhmax+1
+ 204 : 			if nhmax>10 then nhmax,hmax = 0,hmax*1.4 end 
+ 205 : 		else nhmax = 0 end 
+ 206 : 		if h>0 then if t+h+h>tmax then h = tmax*tt - t  end 
+ 207 : 		elseif t+h+h<tmax then h = tmax*tt - t end 
+ 208 : 		h2 = h/2 -- Finalize h and h/2
+ 209 : 	end -- loop back for next time step
+ 210 : 	sa[1][#sa[1]] = tmax; return sa,nit -- Set limit to exactly tmax
+ 211 : end	

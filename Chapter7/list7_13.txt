@@ -1,0 +1,31 @@
+   1 : -- /* File list7_13.lua */ -- Fit to two gaussian peaks with background
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : g1,x1 = {},{}
+   6 : read_data('gauss3.dat',g1,x1) -- Read data from file
+   7 : plot(x1,g1)
+   8 : 
+   9 : gfit = function(xa,c) -- Define function for two peaks
+  10 : 	local x = xa[2]
+  11 : 	return c[1]*math.exp(-c[2]*x) + c[3]*math.exp(-(x-c[4])^2/c[5]^2) +
+  12 : 		c[6]*math.exp(-(x-c[7])^2/c[8]^2) - xa[1]
+  13 : end
+  14 : 
+  15 : c = {100,.01,90,110,25,80,150,25} -- c[7] between 145 and 160, c[4] between 100 and 120
+  16 : del,err,nmax = nlstsq({g1,x1},fw,gfit,c) -- Call fitting program
+  17 : 
+  18 : print('RMS error =',err,'#Iter =',nmax)
+  19 : nd = #x1
+  20 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end -- Print fitting coefficients
+  21 : gcalc,gp1,gp2,gb = {},{},{},{} -- Set up arrays for total and individual peaks
+  22 : for i=1,nd do gcalc[i] = gfit({0,x1[i]},c) end -- Total fitted function
+  23 : c1,c3,c6 = c[1],c[3],c[6]
+  24 : c[3],c[6] = 0,0 -- Set peaks to zero
+  25 : for i=1,nd do gb[i] = gfit({0,x1[i]},c) end -- Background only
+  26 : c[1],c[3]  = 0,c3
+  27 : for i=1,nd do gp1[i] = gfit({0,x1[i]},c) end -- Peak one only
+  28 : c[3],c[6] = 0,c6
+  29 : for i=1,nd do gp2[i] = gfit({0,x1[i]},c) end -- Peak two only
+  30 : plot(x1,g1,gcalc,gp1,gp2,gb) -- plot individual components
+  31 : write_data('list7_13.dat',x1,g1,gcalc,gp1,gp2,gb) -- Save data

@@ -1,0 +1,27 @@
+   1 : -- /* list11_29.lua */
+   2 : -- Solution of first order diff. eqn. with FD method
+   3 : require"odefd"
+   4 : getfenv(odefd).nprint=1
+   5 : getfenv(odefd).umin = {1.e-5,1.e-5}
+   6 : 
+   7 : a = 1 -- or 0.5 or 1 or 4 or any number
+   8 : f1 = function(eqs,x,u,up,upp)
+   9 : 	eqs[1] = u[1]*up[1] + (1-a)*u[1] - a
+  10 : end
+  11 : f2 = function(eqs,x,u,up,upp)
+  12 : 	eqs[1] = u[1]*upp[1] +up[1]^2 + (1-a)*up[1]
+  13 : end
+  14 : fbl = function(eql,u,up)
+  15 : 	eql[1] = u[1] 
+  16 : end
+  17 : fbr = function(eqr,u,up)
+  18 : 	eqr[1] = u[1]*up[1] +(1-a)*u[1] - a
+  19 : end
+  20 : 
+  21 : x = {0,100,2000}; u = {{1,500}}
+  22 : s1,er1,n1 = odefde({f1,fbl,fbr},x,u)
+  23 : x = {0,100,2000}; u = {{1,500}}
+  24 : s2,er2,n2 = odefde({f2,fbl,fbr},x,u)
+  25 : plot(s1,er1); plot(s2,er2)
+  26 : print('Number of iterations =',n1,n2)
+  27 : write_data('list11_29.dat',s1,s2,er1,er2)

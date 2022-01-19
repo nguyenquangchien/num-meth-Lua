@@ -1,0 +1,20 @@
+   1 : -- /* File list11_10.lua */
+   2 : -- Shooting method for boundary value plus eigenvalue problems
+   3 : require"odebv"
+   4 : 			
+   5 : f = function(eqs,E,x,u,up,upp) -- Differntial equation
+   6 : 	eqs[1] = upp[1] + E[1]*u[1]
+   7 : end
+   8 : 
+   9 : nx,xmin,xmax = 2000,0,1
+  10 : Ei = 210; E = {Ei} -- Guess at an eigenvalue
+  11 : -- Set initial value to zero and derivative to 1.0
+  12 : s,err,Ex = odebveve({f,E},{xmin,xmax,nx},{0},{1})
+  13 : plot(s,err) -- Solution and estimated error
+  14 : s,sq = sqnorm(s,1.0); plot(sq) -- Normalize square integral to 1.0
+  15 : nz = nzeros(s)+1; Et = (nz*math.pi)^2
+  16 : write_data('list11_10.dat',s,err)
+  17 : print('Eigenvalue Order = ',nz)
+  18 : print('EV, Extrapolated EV, exact EV =',E[1],Ex[1],Et)
+  19 : print('EV error, Extrapolated EV error =',E[1]-Et,Ex[1]-Et)
+  20 : 

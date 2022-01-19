@@ -1,0 +1,164 @@
+   1 : -- /* File odefd.lua */
+   2 : 
+   3 : require"Matrix" -- Needed for matrix algebra
+   4 : ode2bvfd = function(eqs,x,u)
+   5 : 	local neq,s,upp,up,uppi,upi,ui = #u, {}, {}, {}, {}, {}, {} -- neq = #equations
+   6 : 	a,b,c,d = Matrix.new(neq,neq),Matrix.new(neq,neq),Matrix.new(neq,neq),Matrix.new(neq,1)
+   7 : 	local alfi,e,f = 0, {}, {}
+   8 : 	local feq ,nend = eqs[1], NMAX
+   9 : 	local fval,fu,fctupp,fctup,fctu = {}, {}, {}, {}, {}
+  10 : 	local uppi,upi,ui,cmax,imax,umax = {}, {}, {}, {}, {}, {}
+  11 : 	for m=1,neq do fctupp[m],fctup[m],fctu[m] = FACT,FACT,FACT end
+  12 : 	
+  13 : 	nx = #x; nxm1 = nx-1 -- number of x values -- associated with index 'i'
+  14 : 	for i=1,nxm1 do s[i] = x[i+1] - x[i] end
+  15 : 		
+  16 : 	bound = function(nb,nxb) -- Function to evaluate specified boundary conditions
+  17 : 		xi = x[nxb]
+  18 : 		for m=1,neq do upi[m],ui[m] = up[m][nxb],u[m][nxb] end
+  19 : 		eqs[nb](fval,ui,upi)
+  20 : 		if nb==2 then c1,c2 = -1/s[1],1/s[1] else c1,c2 = 1/s[nx-1],-1/s[nx-1] end
+  21 : 		for m=1,neq do 
+  22 : 			d[m][1] = fval[m]
+  23 : 			upi[m] = upi[m]+fctup[m]; eqs[nb](fu,ui,upi); upi[m] = upi[m]-fctup[m]
+  24 : 			for n=1,neq do -- Probe up factor
+  25 : 				fjk = (fu[n] - fval[n])/fctup[m]
+  26 : 				b[n][m] = c1*fjk
+  27 : 				if nb==2 then c[n][m] = c2*fjk else a[n][m] = c2*fjk end
+  28 : 			end -- Then probe u factor below
+  29 : 			ui[m] = ui[m]+fctu[m]; eqs[nb](fu,ui,upi,ui); ui[m] = ui[m]-fctu[m] 
+  30 : 			for n=1,neq do b[n][m] = b[n][m] + (fu[n] - fval[n])/fctu[m] end
+  31 : 		end
+  32 : 	end -- Return boundary equations involving a,b,c,d
+  33 : 			
+  34 : 	for m=1,neq do upp[m],up[m] = {},{} end -- Derivative arrays
+  35 : 	for ni=1,NMAX do -- ni = iteration number count
+  36 : 		for m=1,neq do fctupp[m],fctup[m],fctu[m] = 0,0,0 end 
+  37 : 		for i=2,nx-1 do -- Calculate second derivative and first derivative for present itteration
+  38 : 			si,sisi,alfi = s[i],(s[i]+s[i-1]),s[i]/s[i-1]
+  39 : 			c1,c2,c3 = 2/(si*sisi),-2*(alfi+1)/(si*sisi),2*alfi/(si*sisi)
+  40 : 			for m=1,neq do
+  41 : 				fctu[m] = fctu[m] + abs(u[m][i]*si) 
+  42 : 				duu = c1*u[m][i+1] + c2*u[m][i] + c3*u[m][i-1]
+  43 : 				upp[m][i],fctupp[m] = duu,fctupp[m]+abs(duu*si) -- Second derivative array
+  44 : 			end
+  45 : 			c1,c2,c3 = 1/(alfi*sisi),(alfi-1)/si,-alfi/sisi
+  46 : 			for m=1,neq do
+  47 : 				duu = c1*u[m][i+1] + c2*u[m][i] + c3*u[m][i-1]
+  48 : 				up[m][i],fctup[m] = duu,fctup[m]+abs(duu*si) -- First derivative array
+  49 : 			end
+  50 : 		end
+  51 : 		alfi = s[2]/s[1]
+  52 : 		for m=1,neq do -- Special treatment for lower end point
+  53 : 			upp[m][1] = upp[m][2]
+  54 : 			up[m][1] = (-u[m][3] + u[m][2]*(1+alfi)^2 - u[m][1]*alfi*(2+alfi))/(alfi*(s[2]+s[1]))
+  55 : 		end
+  56 : 		alfi = s[nxm1]/s[nx-2]
+  57 : 		for m=1,neq do -- Special treatment for upper end point
+  58 : 			upp[m][nx] = upp[m][nxm1]
+  59 : 			up[m][nx] = (u[m][nx]*(1+2*alfi) - u[m][nxm1]*(1+alfi)^2 + 
+  60 : 				u[m][nx-2]*alfi^2)/(alfi*(s[nxm1]+s[nx-2]))
+  61 : 		end
+  62 : 		for m=1,neq do -- Add in end points to protect against large values with small changes
+  63 : 			fctupp[m] = fctupp[m] + abs(upp[m][1]) + abs(upp[m][nx])
+  64 : 			fctup[m] = fctup[m] + abs(up[m][1]) + abs(up[m][nx])
+  65 : 			fctu[m] = fctu[m] + abs(u[m][1]) + abs(u[m][nx])
+  66 : 		end
+  67 : 		for m=1,neq do -- Average values of variables and derivatives
+  68 : 			fctupp[m],fctup[m],fctu[m] = FACT*fctupp[m], FACT*fctup[m],FACT*fctu[m]
+  69 : 			if fctupp[m]==0 then fctupp[m] = FACT end -- Try to protect against zero values
+  70 : 			if fctup[m]==0 then fctup[m] = FACT end
+  71 : 			if fctu[m]==0 then fctu[m] = FACT end
+  72 : 		end
+  73 : 		if umin[1]~=nil then -- limit fctu values based upon umin values
+  74 : 			for m=1,neq do fctu[m] = max(fctu[m],FACT*umin[m]) end
+  75 : 		end
+  76 : 		
+  77 : 		bound(2,1) -- Evaluate lower boundary conditions -- Returns b,c and d coefficients as matrices
+  78 : 		gi = b^-1 -- Matrix algebra for e[] and f[]
+  79 : 		if type(gi)=='number' then 
+  80 : 			printf('Error in left boundary values\nCheck boundary equations\n') 
+  81 : 			return end
+  82 : 		e[2],f[2] = -gi*c,-gi*d
+  83 : 							
+  84 : 		for i=2,nx-1 do -- Set up a,b,c,d arrays and save e and h as arrays -- do not need to save a,b,c,d
+  85 : 			xi,si,sisi,alfi = x[i],s[i],(s[i]+s[i-1]),s[i]/s[i-1]
+  86 : 			for m=1,neq do -- Set up arrays for local values of second and first derivatives
+  87 : 				uppi[m],upi[m],ui[m] = upp[m][i],up[m][i],u[m][i]
+  88 : 				for n=1,neq do a[n][m],b[n][m],c[n][m] = 0,0,0 end -- Zero a,b,c arrays from previous iteration
+  89 : 			end
+  90 : 			feq(fval,xi,ui,upi,uppi,i) -- Evaluate equations -- returns difference from desired zero value
+  91 : 			for m=1,neq do -- increment each variable in order - - k = variable number
+  92 : 				d[m][1] = fval[m] -- Set d[] array value
+  93 : 				c1,c2,c3 = 2*alfi/(si*sisi), -2*(alfi+1)/(si*sisi), 2/(si*sisi)
+  94 : 				uppi[m] = uppi[m] + fctupp[m]
+  95 : 				feq(fu,xi,ui,upi,uppi,i) -- Probe upp factor for a,b,c components
+  96 : 				for n=1,neq do -- Now collect changes over equations -- j = equation number
+  97 : 					fjk = (fu[n] - fval[n])/fctupp[m] -- Update a,b,c values due to upp
+  98 : 					a[n][m],b[n][m],c[n][m] = a[n][m]+c1*fjk,b[n][m]+c2*fjk,c[n][m]+c3*fjk 
+  99 : 				end
+ 100 : 				c1,c2,c3 = -alfi/sisi, (alfi-1)/si, 1/(alfi*sisi)
+ 101 : 				uppi[m],upi[m] = uppi[m] - fctupp[m], upi[m] + fctup[m]
+ 102 : 				feq(fu,xi,ui,upi,uppi,i) -- probe up factor for a,b,c components
+ 103 : 				for n=1,neq do
+ 104 : 					fjk = (fu[n] - fval[n])/fctup[m] -- Update a,b,c values due to up
+ 105 : 					a[n][m],b[n][m],c[n][m] = a[n][m]+c1*fjk,b[n][m]+c2*fjk,c[n][m]+c3*fjk 
+ 106 : 				end
+ 107 : 				upi[m],ui[m] = upi[m] - fctup[m], ui[m] + fctu[m]
+ 108 : 				feq(fu,xi,ui,upi,uppi,i) -- Probe u factor and update b values due to u
+ 109 : 				for n=1,neq do b[n][m] = b[n][m] + (fu[n]-fval[n])/fctu[m] end  
+ 110 : 				ui[m] = ui[m] - fctu[m]
+ 111 : 			end
+ 112 : 			-- Solve tridagonal matrix equations using matrix algebra
+ 113 : 			gi = (a*e[i] + b)^-1-- Matrix algebra used here to calculate e[] and f[]
+ 114 : 			e[i+1] = -gi*c; f[i+1] = -gi*(d + a*f[i])
+ 115 : 		end -- Now have [i] array of e[] and f[] Matrix factors
+ 116 : 		
+ 117 : 		bound(3,nx) -- Evaluate upper boundary condition -- Calculates a,b and d coefficients
+ 118 : 		gi = (a*e[nx] + b)^-1
+ 119 : 		if type(gi)=='number' then 
+ 120 : 			printf('Error in right boundary values\nCheck boundary equations\n')
+ 121 : 			return end
+ 122 : 		d = -gi*(a*f[nx] + d)
+ 123 : 		
+ 124 : 		for m=1,neq do -- Zero error factors
+ 125 : 			cmax[m],imax[m],umax[m]  = 0,0,0 
+ 126 : 		end
+ 127 : 		for i=nx,1,-1 do -- Now go from point nx to point 1 calculating corrections to equations -- in d array
+ 128 : 			for m=1,neq do 
+ 129 : 				du = d[m][1] -- Each correction is taken in turn
+ 130 : 				c1 = abs(du); if c1>umax[m] then umax[m] = c1 end
+ 131 : 				c2 = abs(u[m][i]) + c1; if c2~=0.0 then c1 = c1/c2 end
+ 132 : 				if c1>cmax[m] then cmax[m]=c1; imax[m]=i end
+ 133 : 				u[m][i] = u[m][i] + du -- Update solutions -- This is what we work for 
+ 134 : 			end
+ 135 : 			if i==1 then break end
+ 136 : 			d = e[i]*d + f[i] -- Matrix algebra for next correction at point i-1
+ 137 : 		end -- Back for next point, i-1
+ 138 : 		
+ 139 : 		if nprint~=0 then -- Print iteration data
+ 140 : 			printf("-- %i-- Iteration number, Maxumum relative, absolute corrections are: \n",ni)
+ 141 : 			for m=1,neq do	printf("(%i) %e, %e, at %i ; ", m, cmax[m], umax[m],imax[m]) end
+ 142 : 			printf("\n"); io.flush()
+ 143 : 		end
+ 144 : 		
+ 145 : 		c1 = 1-- Now see if solution meets accuracy criteria
+ 146 : 		for m=1,neq do	if cmax[m]>ERROR then c1 = 0 end end -- Relative accuracy criteria
+ 147 : 		if c1==1 then nend=ni; break end -- Relative error condition met
+ 148 : 		if umin[1]~=nil then -- Absolute accuracy limits specified
+ 149 : 			c1 = 1
+ 150 : 			for m=1,neq do 
+ 151 : 				if umin[m]~=nil then -- Limit for variable m specified
+ 152 : 					if umin[n]~=0 then if umax[m]>umin[m] then c1 = 0 end -- Test absolute accuracy
+ 153 : 					else if umax[m]>fctu[m]*ERROR/FACT then c1 = 0 end -- Default absolute accuracy
+ 154 : 				end end
+ 155 : 			end
+ 156 : 			if c1==1 then nend=ni; break end -- Absolute error condition met
+ 157 : 		end
+ 158 : 	end
+ 159 : 	return nend, cmax, umax, upp, up -- Solution values returned in u calling array
+ 160 : 	-- Derivatives returned in case user needs values, they don't have to be recalculated
+ 161 : end
+ 162 : setfenv(ode2bvfd,{type=type,abs=math.abs,max=math.max,Matrix=Matrix,
+ 163 : 	ERROR=1.e-5,umin={},FACT=1.e-6,NMAX=50,nprint=0,printf=printf,io=io,
+ 164 : 	math=math,table=table,unpack=unpack,ode2bvfd=ode2bvfd})

@@ -1,0 +1,14 @@
+   1 : -- /* list11_23.lua */
+   2 : -- Solution of nonlinear BV problem with coupled equation code
+   3 : 
+   4 : require"odefd"
+   5 : 
+   6 : f = function(eqs,x,y,yp,ypp) -- Differntial equation
+   7 : 	eqs[1] = ypp[1] + 4*yp[1]^2
+   8 : end
+   9 : 
+  10 : u = {0,2}; x = {0,1,2000}
+  11 : s,nn,err1 = odefd(f,x,u)
+  12 : print(nn,err1[1])
+  13 : plot(s[1],s[2]); write_data('list11_23.dat',s)
+  14 : 

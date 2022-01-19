@@ -1,0 +1,29 @@
+   1 : -- /* list12_10.lua */
+   2 : -- Solution of nonlinear Chemical Engineering IV-BV problem
+   3 : require"pdeivbv"
+   4 : getfenv(pdeivbv).nprint = 1
+   5 : 
+   6 : M,EdR,b,Q,ce,Te = 2, 22000, .5e8, 1000, 0.07, 1250
+   7 : Ti = 1270 -- Initial temperature
+   8 : L = 48; Nx = 200; Tm = 60; Nt = 6 -- spatial, time parameters
+   9 : 
+  10 : f = function(eqs,x,t,u,up,upp,ut) -- Differntial equation
+  11 : 	eqs[1] = upp[1]/M - up[1] - b*u[1]^2*math.exp(-EdR/u[2]) - ut[1]
+  12 : 	eqs[2] = upp[2]/M - up[2] +Q*b*u[1]^2*math.exp(-EdR/u[2]) - ut[2]
+  13 : end
+  14 : fl = function(eqs,u,up) -- Left boundary conditions
+  15 : 	eqs[1] = u[1] - up[1]/M - ce
+  16 : 	eqs[2] = u[2] -up[2]/M - Te
+  17 : end
+  18 : fr = function(eqs,u,up)
+  19 : 	eqs[1] = up[1] -- Zero slopes
+  20 : 	eqs[2] = up[2]
+  21 : end
+  22 : 
+  23 : tvals = {0,Tm,Nt}
+  24 : x,u = {},{{},{}} -- Set initial values
+  25 : for i=1,Nx+1 do x[i],u[1][i],u[2][i] = L*(i-1)/Nx,0,1270 end
+  26 : s = pdeivbv({f,fl,fr},tvals,x,u) -- Solve equations
+  27 : plot(s[1],s[#s-1]); plot(s[1],s[#s])
+  28 : write_data('list12_10.dat',s)
+  29 : 

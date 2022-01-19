@@ -1,0 +1,26 @@
+   1 : -- /* File list10_18.lua */
+   2 : -- Programs to integrate first order diff. equation using adaptive step size algorithm
+   3 : require"odeiv"
+   4 : 
+   5 : mu = 20
+   6 : f1 = function(eqs,t,y,yp) -- Stiff differential equation
+   7 : 	eqs[1] = yp[1] + 1001*y[1] - 999*y[2]
+   8 : 	eqs[2] = yp[2] - 999*y[1] + 1001*y[2]
+   9 : end
+  10 : f2 = function(eqs,t,y,yp) -- Sinusoidal differential equation
+  11 : 	eqs[1] = yp[1] -y[2]
+  12 : 	eqs[2] = yp[2] +y[1]
+  13 : end
+  14 : f3 = function(eqs,t,y,yp) -- Van der Pol equation 
+  15 : 	eqs[1] = yp[1] - y[2]
+  16 : 	eqs[2] = yp[2] - mu*(1 - y[1]^2)*y[2] + y[1]
+  17 : end
+  18 : --Now solve three equations
+  19 : s1,err1 = odeivse(f1,{0,10},{0,2})
+  20 : print(errstat(err1[2]));print(errstat(err1[3]))
+  21 : s2,err2 = odeivse(f2,{0,100},{0,1})
+  22 : print(errstat(err2[2]));print(errstat(err2[3]))
+  23 : s3,err3 = odeivse(f3,{0,100},{1,0})
+  24 : print(errstat(err3[2]));print(errstat(err3[3]))
+  25 : write_data("list10_18.dat",s1,err1,s2,err2,s3,err3)
+  26 : print(#s1[1],#s2[1],#s3[1])

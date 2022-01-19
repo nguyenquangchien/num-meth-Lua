@@ -1,0 +1,44 @@
+   1 : -- /* File pdeivbv.lua */
+-------
+  66 : local usave,utsave
+  67 : pdeivbv = function(eqsub,tvals,x,u,ut,utt) -- Simple initial-value, boundary-value interface  
+  68 : 	local tmin,ntkeep,ntval,dtkeep,nit
+  69 : 	local usol = {x} -- Array to hold solutions
+  70 : 	if type(u[1])~='table' then u = {u} end -- For one dimensional case
+  71 : 	local neq,nx = #u, #x -- Number of solution variables
+  72 : 	ntkeep,ntval = tvals[3] or NKEEP, tvals[4] or NTVAL -- Set number of t intervals
+  73 : 	if type(tvals[2])=='table' then ntkeep,ntval = #tvals[2], tvals[3] or NTVAL end
+  74 : 	if type(tvals[2])=='number' then -- Simple input format
+  75 : 		if type(tvals[3])~='table' then tvals[3] = {} end --Ensure table 
+  76 : 		dtkeep = (tvals[2] - tvals[1])/ntkeep; tvals[2] = {}
+  77 : 		for j=1,ntkeep do -- Set up time arrays for simple input
+  78 : 			tvals[2][j] = tvals[1] + j*dtkeep
+  79 : 			tvals[3][j] = tvals[3][j] or ntval
+  80 : 		end
+  81 : 	elseif type(tvals[3])=='number' then 
+  82 : 		tvals[3] = {};
+  83 : 		for j=1,ntkeep do tvals[3][j] = ntval end 
+  84 : 	end
+  85 : 	if type(utt)~='table' then utt = {} end -- Ensure tables for derivitives 
+  86 : 	if type(ut)~='table' then ut = {} end
+  87 : 	local nutt,nut = #utt, #ut
+  88 : 	if nut~=neq then for m=1,neq do ut[m] = {} end end
+  89 : 	for m=1,neq do
+  90 : 		if #ut[m]~=nx then for k=1,nx do ut[m][k] = 0 end end
+  91 : 	end
+  92 : 	tmin = tvals[1]
+  93 : 	for i=1,ntkeep do -- Step over time increments
+  94 : 		usol = usave(usol,u) -- Save solution values
+  95 : 		nit = pdebivbv(eqsub,{tmin,tvals[2][i],tvals[3][i]},x,u,ut,utt) -- Now solve it !
+  96 : 		tmin = tvals[2][i] -- Increment initial time value
+  97 : 		if nprint~=0 then 
+  98 : 			printf('Time = %e Number of iterations in pdeivbv = %d \n\n' ,tmin,nit)
+  99 : 			io.flush()
+ 100 : 		end
+ 101 : 		if nprint==2 then for j=1,neq do plot(x,u[j]) end end
+ 102 : 	end
+ 103 : 	usol = usave(usol,u) -- Save final values
+ 104 : 	return usol
+ 105 : end
+ 106 : setfenv(pdeivbv,{pdebivbv=pdebivbv,printf=printf,plot=plot,type=type,
+ 107 : nprint=0,io=io,NKEEP=10,NTVAL=10,usave=usave})

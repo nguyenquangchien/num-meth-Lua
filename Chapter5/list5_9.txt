@@ -1,0 +1,46 @@
+   1 : --/* File intg.lua */ -- Integration with Romberg enhancement
+   2 : intg = function(xmin,xmax,f,...)
+   3 : 	nend,n = RMAX, NINIT -- Initially set to 100 slices or intervals
+   4 : 	dx,iend = (xmax - xmin)/n, 0.0 -- Special end treatment if infinite
+   5 : 	fxx = tostring(f(xmin,...)) -- if statements handle infinite function values at boundaries.
+   6 : 	if fxx==inf or fxx==und then -- Infinite lower limit value of function, inf = 1/0
+   7 : 		dx = dx/NDX
+   8 : 		iend = fend(f(xmin+dx,...),f(xmin+dx/2,...),dx)
+   9 : 		xmin = xmin+dx; dx = (xmax-xmin)/n
+  10 : 	end
+  11 : 	fxx = tostring(f(xmax,...))
+  12 : 	if fxx==inf or fxx==und then -- Infinite upper limit value of function
+  13 : 		dx = dx/NDX
+  14 : 		iend = iend + fend(f(xmax-dx,...),f(xmax-dx/2,...),dx)
+  15 : 		xmax = xmax-dx; dx = (xmax-xmin)/n
+  16 : 	end
+  17 : 	a1 = 0.5*(f(xmin,...)+f(xmax,...)) -- End point values for trapezoidal rule
+  18 : 	for i=1,n-1 do a1 = a1 + f(xmin+i*dx,...) end -- Sum internal points
+  19 : 	a = {dx*a1} -- Initial area estimate from trapezoidal rule
+  20 : 	for j=1,RMAX do -- Romberg cycles -- 12 maximum
+  21 : 		n,dx = 2*n, dx/2 -- Double number of slices and half spacing of slices
+  22 : 		for i=1,n-1,2 do a1 = a1 + f(xmin+i*dx,...) end -- Sum over additional slices
+  23 : 		a[j+1] = dx*a1 -- Updated area with additional slices
+  24 : 		p2 = 2; alast=a[1]
+  25 : 		for k=j,1,-1 do -- Romberg convegence accelerations
+  26 : 			a[k] = (p2*a[k+1] - a[k])/(p2-1)
+  27 : 			p2 = 2*p2
+  28 : 		end
+  29 : 		p2 = abs(a[1]-alast)/abs(a[1]+alast) -- Error estimate for this cycle
+  30 : 		if p2<ERROR then nend=j; break end
+  31 : 	end
+  32 : 	return a[1]+iend,nend,abs(a[1]-alast) -- Add area of ends and return with number of cycles
+  33 : end
+  34 : 
+  35 : local fend = function(f1,f2,dx) -- Approximate values of ends for infinite f(x)
+  36 : 	local n = log(f2/f1)/log(2) -- Approximates with power law on x near ends, f1*x^(-n)
+  37 : 	if n>=1 then print("Value of integral appears to be infinite") end
+  38 : 	return f1*dx/(1-n)
+  39 : end	
+  40 : setfenv(intg,{abs=math.abs,RMAX=15,NINIT=100,NDX=1000,ERROR=1.e-11,tostring=tostring,inf=tostring(math.huge),und=tostring(0/0),fend=fend})
+  41 : setfenv(fend,{log=math.log,print=print})
+  42 : 	
+  43 : intg_inf = function(f,...) -- evaluate integral from 0 to infinity, using folded interval
+  44 : 	return intg(0,1,(function(x,...) return f(x,...)+f(1/x,...)/x^2 end),...)
+  45 : end
+  46 : 

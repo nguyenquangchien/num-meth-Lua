@@ -1,0 +1,16 @@
+   1 : -- /* File list9_16.lua */ -- Parameter estimation for diode equation
+   2 : 
+   3 : requires("nlstsq","mcpar","DataFit")
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : -- Change lines 6 through 12 for different data sets
+   7 : infile = 'ivdata'
+   8 : xd,yd = {},{}; read_data(infile..'.txt',xd,yd) -- x stored first
+   9 : nd = #xd; for i=1,nd do yd[i] = math.log(yd[i]) end
+  10 : 
+  11 : ft = function(x,c) -- Define function to fit data
+  12 : 	return  math.log(c[1]*(math.exp(x[2]/(0.0259*c[2])) - 1)) - x[1]
+  13 : end
+  14 : 
+  15 : c = {1.e-9,2}; nc = #c; step ={0,1.2} -- Initial approximations. End of changes for most data sets
+  16 : fw = {}; for i=1,nd do fw[i] = 1 end

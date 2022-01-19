@@ -1,0 +1,31 @@
+   1 : -- /* File odebv.lua */
+   2 : -- Shooting(ST) method for boundary value problems
+   -----
+  46 : -- Shooting method for boundary value plus eigenvalue problems
+  47 : odebvev = function(feqs,tvals,ui,upi) -- Basic shooting eigen value solver
+  48 : 	odebiv = odeb12 -- Second order equations
+  49 : 	local nr,s,ns,ni,fbound,E,feq,feqse,err = 'false'
+  50 : 	feq,E,fbound = feqs[1],feqs[2],feqs[3]
+  51 : 	if type(E)=='function' then nr,E,fbound = 'true',fbound,E end
+  52 : 	local u,up,nu = {},{},#ui
+  53 : 	-- Define local default function for boundary values
+  54 : 	local defb = function(beqs,uF) -- Default function for fbound if not input
+  55 : 		for i=1,ns do beqs[i] = uF[i] end -- Zero boundary conditions
+  56 : 	end
+  57 : 	fbound = fbound or defb; ns = #E
+  58 : 	-- Define local function for Newton's method
+  59 : 	local fbeval = function(beqs,E) -- E[] is array of eigenvalues
+  60 : 		feqse = function(eqs,x,du,dup,dupp) -- Local calling function
+  61 : 			feq(eqs,E,x,du,dup,dupp) -- Adds E to calling argument
+  62 : 		end -- Now use in calling equation solver
+  63 : 		for i=1,nu do u[i],up[i] = ui[i],upi[i] end -- Set initial values
+  64 : 		odeiv(feqse,tvals,u,up) -- Solve initial value problem
+  65 : 		fbound(beqs,u,up) -- Update boundary errors
+  66 : 	end -- End of function for Newton's method
+  67 : 	ni,err = nsolv(fbeval,E) -- Solve boundary value problem subject to fbeval() equations
+  68 : 	for i=1,nu do u[i],up[i] = ui[i],upi[i] end
+  69 : 	s,ns = odeiv(feqse,tvals,u,up) -- Update with final solution values
+  70 : 	odebiv = loc_odebiv -- Always leave with odebiv() reset
+  71 : 	if nr then nr,feqs[2],feqs[3] = 'false',fbound,E end -- Reverse
+  72 : 	return s,ns,ni,err,E
+  73 : end	

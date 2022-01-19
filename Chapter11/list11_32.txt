@@ -1,0 +1,57 @@
+   1 : -- /* list11_32.lua */
+   2 : -- Fitting of data to BV problem for parameter estimation 
+   3 : require"odefd"; require"nlstsq"; require"intp"; require"DataFit"
+   4 : exp = math.exp
+   5 : x,u1,u2 = {},{},{}
+   6 : read_data('list11_32_in.dat',x,u1,u2)
+   7 : _,_,std1 = datafit{u1,x}; _,_,std2 = datafit{u2,x} -- Est. standard dev.
+   8 : print('std1, std2 = ',std1, std2)
+   9 : nd = #x -- number of data points
+  10 : utp = {1}; for i=2,nd do utp[i] = 2 end -- flag for u data 
+  11 : u = {}; for i=1,nd do u[i] = u1[i] end
+  12 : for i=1,nd do
+  13 : 	x[i+nd] = x[i] -- repeat x values
+  14 : 	u[i+nd] = u2[i] -- make single array
+  15 : 	utp[i+nd] = 3 -- flag for u2 data
+  16 : end -- 3 data values, one of which is data flag
+  17 : yx = {u,x,utp} -- data arrays, dependent values first
+  18 : c = {0.5, 0.5e8, 22000, .5e11} -- Guess at Differential eqn.  coefficients
+  19 : nt = 200 -- Number of points for integration
+  20 : nx,nc,xx = #yx, #c, {0,50,nt} 
+  21 : nd = #x -- 2*number of data points
+  22 : actv,step,del,fw = {},{},{},{} -- nlstsq parameters
+  23 : for i=1,nd do 
+  24 : 	if i<= nd/2 then fw[i] = 1/std1^2 
+  25 : 	else fw[i] = 1/std2^2 end -- 1/std^2 weighting 
+  26 : 	--fw[i] = 1 -- Unity weighting -- Try these
+  27 : 	--fw[i] = 1/u[i] -- 1/Y weighting
+  28 : 	--fw[i] = 1/u[i]^2 -- 1/y^2 weighting
+  29 : end 
+  30 : ce, te = 0.07, 1250
+  31 : ui = {{0,0},{1250,1250}} -- Initial approximations to solutions
+  32 : actv = {0,1,1,0} -- Tru any two combinations
+  33 : ft = function(eqt,x,u,up,upp)  -- Differential equation
+  34 : 	eqt[1] = c[1]*upp[1] - up[1] - c[2]*u[1]^2*exp(-c[3]/u[2])
+  35 : 	eqt[2] = c[1]*upp[2] - up[2] + c[4]*u[1]^2*exp(-c[3]/u[2])
+  36 : end
+  37 : fbl = function(eqb,u,up) -- Left boundary conditions
+  38 : 	eqb[1] = u[1] - c[1]*up[1] - ce
+  39 : 	eqb[2] = u[2] - c[1]*up[2] - te
+  40 : end
+  41 : fbr = function(eqb,u,up) -- Right boundary conditions
+  42 : 	eqb[1] = up[1]; eqb[2] = up[2] -- Zero derivatives
+  43 : end
+  44 : feq = function(yx,c,new) -- Equation for nlstsq()
+  45 : 	flg = yx[3]
+  46 : 	if flg==1 then
+  47 : 		s = odefd({ft,fbl,fbr},xx,ui) -- Solve differential equation
+  48 : 		xt, flg = s[1], 2 
+  49 : 		ff = {intpf(s[1],s[2]), intpf(s[1],s[3])}
+  50 : 	end -- New solution now available
+  51 : 	return ff[flg-1](yx[2]) -yx[1]
+  52 : end
+  53 : del, err, nmax = nlstsq(yx,fw,feq,c,actv,step)
+  54 : print('RMS error =',err)
+  55 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.3e\n',i,c[i],del[i]) end
+  56 : s = odefd({ft,fbl,fbr},xx,ui) -- Solve differential equation
+  57 : write_data('list11_32.dat',s,x,u); plot({s[1],s[2]},{x,u1}); plot({s[1],s[3]},{x,u2})

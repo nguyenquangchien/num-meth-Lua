@@ -1,0 +1,39 @@
+   1 : -- /* File list12_17.lua */
+   2 : -- Program for transient solution of nonlinear transmission line
+   3 : 
+   4 : require"odefd"; require"pdeivbv"
+   5 : require"intp"
+   6 : getfenv(pdeivbv).nprint = 1
+   7 : getfenv(ode2bvfd).umin = {5.e-4,5.e-4,5.e-4}
+   8 : --getfenv(ode2bvfd).nprint = 1; getfenv(pdebivbv).nprint = 1
+   9 : 
+  10 : tt = os.time()
+  11 : -- Model equations to be solved
+  12 : cosh = function(x) return (math.exp(x) + math.exp(-x))*.5 end
+  13 : ui = function(x,a,xo) return a/(cosh(0.5*math.sqrt(2*a)*(x-xo))^2) end
+  14 : 
+  15 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  16 : 	fu[1] = up[1] - u[2]
+  17 : 	fu[2] = upp[2] + 6*u[1]*u[2] + ut[1]
+  18 : end
+  19 : efl = function(fu,u,up,t,ut) -- Left boundary condition
+  20 : 	fu[1], fu[2] = u[1], u[2]
+  21 : end
+  22 : efr = function(fu,u,up,t,ut) -- Right boundary condition
+  23 : 	fu[1], fu[2] = u[1], u[2]
+  24 : end
+  25 : 
+  26 : x = {}; nx = 1000; L = 40 -- Define x values 
+  27 : for i=1,nx+1 do x[i] = L*(i-1)/nx end
+  28 : 
+  29 : u = {{},{}} -- Set initial two solitons at x=4, x=20 
+  30 : for i=1,nx+1 do u[1][i] = ui(x[i],4,4) end
+  31 : for i=1,nx+1 do u[1][i] = u[1][i] + ui(x[i],1,20) end
+  32 : for i=1,nx+1 do u[2][i] = intp(x,u[1],x[i],1) end
+  33 : 
+  34 : tvals = {0,5,50,10,{0,.25*L,.5*L,.75*L,L}} 
+  35 : s,st = pdeivbvt({eq,efl,efr},tvals,x,u)
+  36 : write_data(2,'list12_17.dat',s) -- Save same number of points as before
+  37 : write_data('list12_17t.dat',st)	
+  38 : print('time taken for calculation = ',os.time()-tt); tt = os.time()
+  39 : 

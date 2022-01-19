@@ -1,0 +1,37 @@
+   1 : --/* File 4_13.lua */ -- Parameters for time pulse
+   2 : require "nsolv"; require"deriv"
+   3 : exp = math.exp
+   4 : 
+   5 : --t1,t2 = 10,1000 -- Select pulse as desired
+   6 : --t1,t2 = 10,350
+   7 : t1,t2 = 5,50
+   8 : --t1,t2 = 1.2,50
+   9 : t3,t4 = t1/1.25,t1/10
+  10 : 
+  11 : eqs = function(f,c)
+  12 : 	t10,t90 = c[4],c[4]+t3,c[5]
+  13 : 	tm,t50 = c[5],c[4] -t4 + t2
+  14 : 	f[1] = fx(t10,c) -.1 -- 10% point, c[4] = time
+  15 : 	f[2] = fx(t90,c) -.9 -- 90% point x90 = time
+  16 : 	f[3] = fx(t50,c) - .5 -- 50% point x50 = time
+  17 : 	f[4] = deriv(fx,tm,c) -- Derivative at peak = 0
+  18 : 	f[5] = fx(tm,c) -1 -- Peak value = 1 at c[5] = time
+  19 : end
+  20 : fx = function(t,c)
+  21 : 	return c[3]*(1-exp(-t/c[1]))*exp(-t/c[2])
+  22 : end
+  23 : 
+  24 : c = {t1/2,1.5*t2,1,t1/10,1.5*t1}; nc = #c
+  25 : nn,err = nsolv(eqs,c,step)
+  26 : print('at ',t1,t2)
+  27 : print('Number of iterations, error = ',nn,err)
+  28 : for i=1,nc do printf('c[%d] = %12.4e\n',i,c[i]) end
+  29 : i = 1; xv,yv = {},{}
+  30 : for t = 0,2*t2,t2/1000 do
+  31 : 	xv[i],yv[i] = t, fx(t,c); i = i+1
+  32 : end
+  33 : plot(xv,yv); write_data('list4_13.dat',xv,yv)
+  34 : print('10% point at ',c[4],fx(c[4],c))
+  35 : print('90% point at',t3+c[4],fx(t3+c[4],c))
+  36 : print('peak point at',c[5],fx(c[5],c))
+  37 : print('50% point at',c[4]+t2-t4,fx(c[4]+t2-t4,c))

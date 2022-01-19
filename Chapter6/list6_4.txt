@@ -1,0 +1,12 @@
+   1 : --/*  File intp.lua */
+   2 : 
+  60 : intpf = function(xd,yd) -- Embed data and convert to f(x)
+  61 : 	local xdd,ydd,ydrv = {},{},{} -- Store data locally
+  62 : 	nd = #xd
+  63 : 	if xd[nd]<xd[1] then for i=1,nd do -- reverse data
+  64 : 		xdd[i],ydd[i] = xd[nd+1-i],yd[nd+1-i] end
+  65 : 	else for i=1,nd do 
+  66 : 		xdd[i],ydd[i] = xd[i],yd[i] end end
+  67 : 	return (function(x,drv) return intp(xdd,ydd,x,drv,ydrv) end)
+  68 : end
+  69 : 

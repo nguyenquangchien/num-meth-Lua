@@ -1,0 +1,17 @@
+   1 : -- File pde2bv.lua --
+   2 : -- Code for PDE BV problems in 2 dimensions -- rectangular grid of points
+------
+ 233 : sdsolve = function(a,b,u,lan) -- Single step of SOR
+ 234 : 	local n,epsm,bb,row,eps,jm,im = #b,0.0
+ 235 : 	local um = 0.0
+ 236 : 	lan = lan or 1
+ 237 : 	for j=1,n do -- Update each row in turn
+ 238 : 		row,eps = a[j],-b[j]
+ 239 : 		for i,v in pairs(row) do eps = eps + v*u[i] end
+ 240 : 		eps = eps/a[j][j]; u[j] = u[j] - lan*eps
+ 241 : 		if abs(eps)>abs(epsm) then epsm,jm,im = eps,j,i end
+ 242 : 		um = max(um,abs(u[j]))
+ 243 : 	end
+ 244 : 	return u, epsm, um, jm, im
+ 245 : end
+ 246 : setfenv(sdsolve,{table=table,type=type,abs=math.abs,max=math.max,pairs=pairs})

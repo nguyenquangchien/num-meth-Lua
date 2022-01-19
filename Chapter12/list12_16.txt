@@ -1,0 +1,42 @@
+   1 : -- /* File list12_16.lua */
+   2 : -- Program for transient solution of nonlinear transmission line
+   3 : 
+   4 : require"odefd"; require"pdeivbv"; require"intp"
+   5 : getfenv(pdeivbv).nprint = 1
+   6 : getfenv(ode2bvfd).umin = {5.e-4,5.e-4,5.e-4}
+   7 : --getfenv(ode2bvfd).nprint = 1; getfenv(pdebivbv).nprint = 1
+   8 : 
+   9 : tt = os.time()
+  10 : -- Model equations to be solved
+  11 : us = 5.0 -- peak value of initial triangular wave
+  12 : 
+  13 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  14 : 	fu[1] = up[1] - u[2]
+  15 : 	fu[2] = upp[2] + 6*u[1]*u[2] + ut[1]
+  16 : end
+  17 : 
+  18 : efl = function(fu,u,up,t,ut) -- Left boundary condition
+  19 : 	fu[1], fu[2] = u[1], u[2] 
+  20 : end
+  21 : efr = function(fu,u,up,t,ut) -- Right boundary condition
+  22 : 	fu[1], fu[2] = u[1], u[2]
+  23 : end
+  24 : 
+  25 : x = {}; nx = 1000; L = 20 -- Define x values 
+  26 : for i=1,nx+1 do x[i] = L*(i-1)/nx end
+  27 : 
+  28 : u = {{},{}} -- Set initial wave values, 
+  29 : for i=1,nx+1 do -- Set initial triangular wave at x=2
+  30 : 	if x[i]>3 then u[1][i] = 0
+  31 : 	elseif x[i]>2 then u[1][i] = us*(3-x[i])
+  32 : 	elseif x[i]>1 then u[1][i] = us*(x[i]-1)
+  33 : 	else u[1][i] = 0 end
+  34 : end
+  35 : for i=1,nx+1 do u[2][i] = intp(x,u[1],x[i],1) end
+  36 : 
+  37 : tvals = {0,2.5,25,20,{0,.25*L,.5*L,.75*L,L}}  
+  38 : s,st = pdeivbvt({eq,efl,efr},tvals,x,u,up,upp)
+  39 : write_data(2,'list12_16.dat',s) -- Save same number of points as before
+  40 : write_data('list12_16t.dat',st)	
+  41 : print('time taken for calculation = ',os.time()-tt)
+  42 : 

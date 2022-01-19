@@ -1,0 +1,25 @@
+   1 : -- /* File list7_14.lua */ -- data fitting for Figure 7.1 with nlstsq()
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : xd,yd = {},{}
+   6 : read_data('list7_1.dat',xd,yd)
+   7 : 
+   8 : ft = function(x,c) -- Define function to fit data
+   9 : 	local xx = x[2]
+  10 : 	return c[1]*math.sin(c[2]*xx) +c[3]*math.sin(c[4]*xx)- x[1]
+  11 : end
+  12 : 
+  13 : c = {1,2*math.pi/80,.1,6*math.pi/80} -- Initial guess at coefficients
+  14 : del,err,nmax = nlstsq({yd,xd},fw,ft,c) -- Call fiting 
+  15 : print('RMS error =',err,'#Iter =',nmax) -- print results
+  16 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  17 : print('periods = ',2*math.pi/c[2],2*math.pi/c[4])
+  18 : ycalc,y1,y2 = {},{},{}
+  19 : for i=1,#xd do 
+  20 : 	y1[i] = c[1]*math.sin(c[2]*xd[i])
+  21 : 	y2[i] = c[3]*math.sin(c[4]*xd[i])
+  22 : 	ycalc[i] = y1[i] + y2[i]
+  23 : end
+  24 : write_data('list7_14.dat',xd,yd,ycalc,y1,y2)
+  25 : plot(xd,yd,ycalc)

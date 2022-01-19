@@ -1,0 +1,25 @@
+   1 : -- /* File list8_4.lua */ -- Illustration of generating prob density data
+   2 : 
+   3 : require"prob"; require"deriv" -- rderiv used to handle derivative at x = 0
+   4 : 
+   5 : x,y,yd = {},{},{}
+   6 : v = {1,1.5,2,3,4,5,6}; nv = #v -- Define v values for Weibull function
+   7 : -- Probability density calculated from derivative of distribution function
+   8 : f = function(x) return Pweibull(x,vv) end -- Function for derivative
+   9 : 
+  10 : for i=1,nv do y[i],yd[i] = {},{} end
+  11 : i = 1
+  12 : for xv=0,5,.01 do -- Step over x values
+  13 : 	x[i] = xv
+  14 : 	for j=1,nv do -- Step over v values
+  15 : 		vv = v[j]
+  16 : 		y[j][i] = Pweibull(xv,vv) -- Accumulate distribution values
+  17 : 		yd[j][i] = rderiv(f,xv) -- Accumulate derivative values
+  18 : 	end
+  19 : 	i = i+1
+  20 : end
+  21 : plot(x,unpack(y))
+  22 : plot(x,unpack(yd))
+  23 : write_data('list8_4.dat',x,yd)
+  24 : 
+  25 : 

@@ -1,0 +1,32 @@
+   1 : -- /* File list9_14.lua */ -- Parameter estimation for diode equation
+   2 : 
+   3 : requires("nlstsq","mcpar","DataFit")
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : -- Change lines 6 through 12 for different data sets
+   7 : infile = 'ivdata'
+   8 : xd,yd = {},{}; read_data(infile..'.txt',xd,yd) -- x stored first
+   9 : nd = #xd
+  10 : 
+  11 : ft = function(x,c) -- Define function to fit data
+  12 : 	return  c[1]*(math.exp(x[2]/(0.0259*c[2])) - 1) - x[1]
+  13 : end
+  14 : 
+  15 : c = {1.e-9,2}; nc = #c; step ={0,1.2} -- Initial approximations. End of changes for most data sets
+  16 : fw = {}; for i=1,nd do fw[i] = 1.0 end
+  17 : 
+  18 : -- Section 2. Perform data fit and print fitted parameters
+  19 : del,err,nn = nlstsq({yd,xd},fw,ft,c,actv,step) -- Call fiting, print max iterations 
+  20 : print("Number of iterations, err =",nn,err)
+  21 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  22 : 
+  23 : -- Section 3. Generate 6-Plot Data, Only Plots 1,2,3 and 6 are used here
+  24 : ycalc,res = {},{} -- Calculate fitted values and residuals
+  25 : for i=1,nd do ycalc[i] = newtonfc(ft,{yd[i],xd[i]},c); res[i] = yd[i] - ycalc[i] end
+  26 : fres1,fres2 = datafit({res,xd}), datafit({res,yd}) -- Fit residuals
+  27 : yres1,yres2,xyp,xypn = {},{},{},{}
+  28 : for i=1,nd do yres1[i],yres2[i] = fres1(xd[i]),fres2((ycalc[i])) end
+  29 : xyp[1],xyp[2] = makeCDF(res); xypn[1],xypn[2] = normalCDF(res) -- CDF data for residuals
+  30 : plot(xd,yd,ycalc); plot(xd,yres2,res); plot(ycalc,yres2,res); plot(xyp,xypn) 
+  31 : write_data(infile..'a.dat',xd,yd,ycalc,res,yres1,yres2,xyp,xypn)
+  32 : 

@@ -1,0 +1,17 @@
+   1 : -- /* File list11_8.lua */
+   2 : -- Shooting method for boundary value plus eigenvalue problems
+   3 : require"odebv"
+   4 : 			
+   5 : f = function(eqs,E,x,u,up,upp) -- Differntial equation
+   6 : 	eqs[1] = upp[1] + E[1]*u[1]
+   7 : end
+   8 : 
+   9 : nx,xmin,xmax = 2000,0,1
+  10 : Ei = 0; E = {Ei} -- Guess at an eigenvalue
+  11 : -- Set initial value to zero and derivative to 1.0
+  12 : s,ns,nm,err = odebvev({f,E},{xmin,xmax,nx},{0},{1})
+  13 : 
+  14 : plot(s); print(E[1],ns,nm,err)
+  15 : print('Eigenvalue error =',E[1]-math.pi^2)
+  16 : write_data('list11_8.dat',s)
+  17 : print('number of zeros = ',nzeros(s))

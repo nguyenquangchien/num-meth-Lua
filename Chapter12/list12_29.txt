@@ -1,0 +1,86 @@
+   1 : -- File pde2bv.lua --
+   2 : -- Code for PDE BV problems in 2 dimensions -- rectangular grid of points
+------
+ 495 : pde1stp2bv1t = function(feqs,tvals,x,y,ua,tpsola,ut,utt) -- 2 spatial dimensions plus time PDE Solver
+ 496 : 	local j, neq, t, h, h2,h2sq,hs,hx,hy,hz -- Local variables for function
+ 497 : 	local unn,un,jfirst = {},{},0
+ 498 : 	local nit,nitt,errm = 0,0 -- Number of iterations
+ 499 : 	local nx,ny = #x, #y
+ 500 : 	local neq,uxy = nx*ny
+ 501 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 502 : 	local u,ur = Spmat.new(nx,-ny), Spmat.new(nx,-ny) -- Single array with nx,ny information	
+ 503 : 	ut = ut or {}; utt = utt or {}
+ 504 : 	if #ua==neq then uxy=false else uxy=true end
+ 505 : 	-- Functions to add next time values and time derivatives 
+ 506 : 	local fpde,fbb,fbt,fbr,fbl = feqs[1], feqs[2], feqs[3], feqs[4], feqs[5]
+ 507 : 	feq = { -- Local functions to add time and time derivatives
+ 508 : 		function(x,y,uxx,ux,u,uy,uyy,i,j) -- General spatial point
+ 509 : 			local k = i + (j-1)*nx
+ 510 : 			local ut,utt = (u - un[k])/h2, (u - unn[k])/h2sq
+ 511 : 			return fpde(x,y,t,uxx,ux,u,uy,uyy,ut,utt,i,j)
+ 512 : 		end,
+ 513 : 		function(x,u,uy,ux,i) -- Bottom boundary
+ 514 : 			local ut,utt = (u - un[i])/h2, (u - unn[i])/h2sq
+ 515 : 			return fbb(x,t,u,uy,ux,ut,utt,i)
+ 516 : 		end,
+ 517 : 		function(x,u,uy,ux,i) -- Top boundary
+ 518 : 			local k = i+neq-nx
+ 519 : 			local ut,utt = (u - un[k])/h2, (u - unn[k])/h2sq
+ 520 : 			return fbt(x,t,u,uy,ux,ut,utt,i)
+ 521 : 		end,
+ 522 : 		function(y,u,ux,uy,j) -- Left boundary
+ 523 : 			local k = 1+(j-1)*nx
+ 524 : 			local ut,utt = (u - un[k])/h2, (u - unn[k])/h2sq
+ 525 : 			return fbr(y,t,u,ux,uy,ut,utt,j)
+ 526 : 		end,
+ 527 : 		function(y,u,ux,uy,j) -- Right boundary
+ 528 : 			local k = j*nx
+ 529 : 			local ut,utt = (u - un[k])/h2, (u - unn[k])/h2sq
+ 530 : 			return fbl(y,t,u,ux,uy,ut,utt,j)
+ 531 : 		end
+ 532 : 	}
+ 533 : 	for j=1,ny do -- Local array for storing solution values in linear array
+ 534 : 		for i=1,nx do
+ 535 : 			k = i + (j-1)*nx; if uxy then u[k] = ua[j][i] else u[k] = ua[k] end
+ 536 : 		end
+ 537 : 	end
+ 538 : 	t = tmin -- Initial t value
+ 539 : 	hs = (tmax - t)/ntval -- Equal increments in t used, no adjusting step size
+ 540 : 	-- If initial derivative not specified, use Backwards differencing for first 4 points
+ 541 : 	if #ut~=neq then for m=1,neq do ut[m] = ut[m] or 0 end end -- Complete initial derivatives 
+ 542 : 	if #utt~=neq then for m=1,neq do utt[m] = 0 end
+ 543 : 		jfirst,h = 0,0.25*hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- Set to BD parameters
+ 544 : 	else 
+ 545 : 		if bd~=false then jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- BD parameters
+ 546 : 		else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 547 : 	end
+ 548 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 549 : 		repeat -- Use backwards differencing for first interval with 4 sub intervals of size h/4
+ 550 : 			jfirst = jfirst+1
+ 551 : 			-- Set up yn, and ynn arrays and get ready to solve equations
+ 552 : 			for m=1,neq do
+ 553 : 				un[m] = u[m] + hx*ut[m] -- hx = 0 or h/2
+ 554 : 				unn[m] = u[m] + hy*ut[m] + hz*utt[m] -- hy=h, hz=0 or (h/2)^2
+ 555 : 				u[m] = u[m] + h*ut[m] -- Predicted value of u array
+ 556 : 			end
+ 557 : 			t = t + h -- Now increment t to next t value
+ 558 : 			-- Calculate new u values at next time step, new values are returned in u array
+ 559 : 			u,errm,nitt = pde2bv(feq,x,y,u,tpsola) -- Solve PDE at time t
+ 560 : 			if nitt>nit then nit = nitt end -- Monitor maximun number of iterations
+ 561 : 			-- New derivative values, same function as in fnext 
+ 562 : 			for m=1,neq do ut[m],utt[m] = (u[m] - un[m])/h2,(u[m] - unn[m])/h2sq end
+ 563 : 		until jfirst>=4 -- End of first interval repeat using Backwards difference
+ 564 : 		if k==1 then 
+ 565 : 		if bd~=false then jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- BD parameters
+ 566 : 			else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 567 : 		end   
+ 568 : 		if nprint~=0 then print('Completed time =',t,' with correction',errm); io.flush() end
+ 569 : 	end -- End of main loop on t, now return solution array
+ 570 : 	if uxy==false then return u,errm,nit
+ 571 : 	else
+ 572 : 		for j=1,ny do ur[j] = {}; for i=1,nx do k = i+(j-1)*nx; ur[j][i] = u[k] end end
+ 573 : 		return ur,errm,nit
+ 574 : 	end
+ 575 : end -- End of pde1stp2bv1t
+ 576 : setfenv(pde1stp2bv1t,{table=table,pde2bv=pde2bv,print=print,Spmat=Spmat,io=io,
+ 577 : bd=false,nprint=0})

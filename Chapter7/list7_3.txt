@@ -1,0 +1,58 @@
+   1 : -- /* Fourier Series Analysis */
+   2 : 
+   3 : require"Complex"
+   4 : 
+   5 : fourier = function(fk,nc,thmin) -- Evaluate Fourier Cos-Sin  and Cos-Ang Components for time points fk
+   6 : 	nc = nc or 20
+   7 : 	thmin = thmin or 0
+   8 : 	local nd,fcs,fca,fexp = #fk,{},{},{} 
+   9 : 	local pi2,sum,th = 2*math.pi/nd
+  10 : 	for i=0,nc do
+  11 : 		fac,th = pi2*i,i*thmin
+  12 : 		sum1,sum2 = 0,0
+  13 : 		for k=1,nd do
+  14 : 			sum1 = sum1 + fk[k]*math.cos(fac*(k-1)+th)
+  15 : 			sum2 = sum2 + fk[k]*math.sin(fac*(k-1)+th)
+  16 : 		end 
+  17 : 		fcs[i+1] = {2*sum1/nd, 2*sum2/nd} -- Cos-Sin Components -- i=0 has DC component
+  18 : 	end -- Next line does Cos-Ang components
+  19 : 	fcs = fourier_trunc(fcs) 
+  20 : 	for i=1,nc+1 do fca[i] = {math.sqrt(fcs[i][1]^2+fcs[i][2]^2),math.atan2(-fcs[i][2],fcs[i][1])} end
+  21 : 	for i=1,nc+1 do fexp[i] = {fca[i][1]/2,fca[i][2]} end -- Exponential form in magnitude-angle form
+  22 : 	return setmetatable(fca,Fourierca_mt),setmetatable(fexp,Fourierexp_mt),setmetatable(fcs,Fouriercs_mt),nc
+  23 : end
+  24 : 
+  25 : -- Assumed forms are f(t) = a[1] + sum(over n>1){a[n]*Cos(nwt+theta[n])} = a[1] + sum(over n>1){a[n]*Cos(nwt) + b[n]*Sin(nwt)}
+  26 : -- Or for exponential form f(t) = sum(over all -/+ n){alfa[n]*Exp(jnwt)}, Only positive n values calculated; alfa(-n) = conjugate(alfa(n))
+  27 : Fourier = function(f,tmin,tmax,nc) -- Evaluat nc terms of Fourier Series
+  28 : 	local nd,fd,t = 1024,{}
+  29 : 	nc,tmax,tmin = nc or 20,tmax or 1,tmin or 0
+  30 : 	dt = (tmax-tmin)/nd
+  31 : 	for i=1,nd do fd[i] = f(tmin + (i-1)*dt) end -- 1024 samples of time function
+  32 : 	return fourier(fd,nc,tmin/(tmax-tmin)*2*math.pi) -- Returns Cos-Ang and Cos-Sin components
+  33 : 	--return fca,fexp,fcs
+  34 : end -- Only positive harmonics returned for Exp form 
+  35 : 
+  36 : iFourier = function(fcs,nt,nc) -- Inverse Fourier Series for time function
+  37 : 	nt,nc = nt or 512, nc or 1.e20 -- Number of time points, number of Fourier components
+  38 : 	local nm,typ,fl = #fcs, type(fcs), {}
+  39 : 	if nc>nm then nc = nm end -- Can't use more components than available 
+  40 : 	if typ=='CosSin' then for i=1,nc do fl[i] = fcs[i] end 
+  41 : 	elseif typ=='CosAng' then for i=1,nc do fl[i] = {fcs[i][1]*math.cos(fcs[i][2]),
+  42 : 			-fcs[i][1]*math.sin(fcs[i][2])} end
+  43 : 	elseif typ=='ExpAng' then for i=1,nc do fl[i] = {2*fcs[i][1]*math.cos(fcs[i][2]),
+  44 : 			-2*fcs[i][1]*math.sin(fcs[i][2])} end
+  45 : 	end
+  46 : 	local ft,tv = {},{}
+  47 : 	local pi2,sum,erun,efac = 2*math.pi/nt
+  48 : 	local fdc = fl[1][1]/2 -- a[0]/2 is DC term
+  49 : 	for i=1,nt do
+  50 : 		fac,sum = (i-1)*pi2,0
+  51 : 		for k=2,nc do -- Cos-Sin form is faster than Exp form with Complex numbers
+  52 : 			sum = sum + fl[k][1]*math.cos((k-1)*fac) + fl[k][2]*math.sin((k-1)*fac)
+  53 : 		end
+  54 : 		ft[i], tv[i] = sum + fdc, (i-1)/nt
+  55 : 	end
+  56 : 	return tv,ft -- Time, between 0 and 1 and Function values returned
+  57 : end
+ 

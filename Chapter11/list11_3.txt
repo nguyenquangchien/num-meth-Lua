@@ -1,0 +1,32 @@
+   1 : -- /* File odebv.lua */
+   2 : -- Shooting(ST) method for boundary value problems
+   3 : 
+   4 : require"odeiv"; require"nsolv"
+   5 : local loc_odebiv = odebiv
+   6 : 
+   7 : odebvst = function(feqs,tvals,u,up) -- Basic shooting boundary value solver
+   8 : 	local s,ns,neq,nu,ni,fbound,err -- If no boundary function, return initial vlaue solution below
+   9 : 	if type(feqs)=='table' then feqs,fbound = feqs[1],feqs[2] 
+  10 : 	else return odeiv(feqs,tvals,u,up) end
+  11 : 	local inbvs,uL,upL = {},{},{}
+  12 : 	nu = #u
+  13 : 	-- Define local function for Newton's method
+  14 : 	local fbeval = function(beqs,bvs) -- bvs[] is array of boundary values
+  15 : 		for i=1,nu do u[i] = bvs[i]; uL[i] = bvs[i] end -- Set initial values
+  16 : 		for i=nu+1,neq do up[i-nu] = bvs[i]; upL[i-nu] = bvs[i] end -- Set initial derivatives
+  17 : 		odeiv(feqs,tvals,u,up) -- Solve initial value problem, only returned u and up are important
+  18 : 		fbound(beqs,uL,u,upL,up) -- Evaluate errors in boundary equations, return in beqs
+  19 : 	end
+  20 : 	-- End of function for Newton's method
+  21 : 	fbound(inbvs,u,u,up,up) -- probe fbound to get number of boundary equations
+  22 : 	neq = #inbvs -- Number of boundary value equations
+  23 : 	if neq~=nu then odebiv = odeb12 end -- Second degree equations present 
+  24 : 	for i=1,nu do inbvs[i] = u[i] end -- Initial values
+  25 : 	for i=nu+1,neq do inbvs[i] = up[i-nu] end -- Initial derivative values
+  26 : 	ni,err = nsolv(fbeval,inbvs) -- Solve boundary value problem subject to fbeval() equations
+  27 : 	for i=1,nu do u[i] = inbvs[i] end -- Final starting values
+  28 : 	for i=nu+1,neq do up[i-nu] = inbvs[i] end -- Final starting derivatives
+  29 : 	s,ns = odeiv(feqs,tvals,u,up) -- Now evaluate final solution for shooting method
+  30 : 	odebiv = loc_odebiv -- Always leave with odebiv() reset
+  31 : 	return s,ni,ns,err
+  32 : end	

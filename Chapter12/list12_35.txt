@@ -1,0 +1,31 @@
+   1 : -- File list12_35.lua --
+   2 : -- Example of h-2h algorithm for PDEs
+   3 : 
+   4 : require"odeiv"
+   5 : 
+   6 : u80, u160 = {},{} -- Define arrays for solutions
+   7 : x80, x160 = {}, {} -- Linear spatial arrays
+   8 : for i=1,81 do 
+   9 : 	u80[i] = {}; x80[i] = (i-1)/81 
+  10 : end
+  11 : for i=1,161 do 
+  12 : 	u160[i] = {}; x160[i] = (i-1)/160
+  13 : end
+  14 : read_data('list12_34u_80.dat',u80)
+  15 : read_data('list12_34u_160.dat',u160)
+  16 : err = {}; maxerr = 0.0
+  17 : for i=1,81 do 
+  18 : 	s80 = {x80, u80[i]}
+  19 : 	s160 = {x160, u160[1+(i-1)*2]}
+  20 : 	erri = odeerror(s80,s160)[2] -- [2] for error values
+  21 : 	for j=1,#erri do -- Maximum error
+  22 : 		if math.abs(erri[j])>math.abs(maxerr) then
+  23 : 			maxerr, im, jm  = erri[j], i, j
+  24 : 		end
+  25 : 	end
+  26 : 	err[i] = erri
+  27 : end
+  28 : splot(err); print('Maximum error =', maxerr, 'at i,j =', im,jm)
+  29 : write_data('list12_35.dat',err) -- Save error array
+  30 : 
+  31 : 

@@ -1,0 +1,18 @@
+   1 : -- File list2.4 -- Simple complex number operations
+   2 : 
+   3 : require"list2.3" -- Load defined complex extenstios
+   4 : Cnew = Cmp.new -- Local define
+   5 : 
+   6 : c1 = Cnew(3,5) -- Define complex numbers
+   7 : c2 = Cnew(2,8)
+   8 : j = Cnew(0,1) -- pure imaginary of magnitude unity
+   9 : 
+  10 : print(c1*c2) -- Test math operations
+  11 : print(c1/c2)
+  12 : print(c1+c2)
+  13 : print(-c1+c2)
+  14 : print(j*c1)
+  15 : print(tostring(c1))
+  16 : 
+  17 : 
+  18 : 

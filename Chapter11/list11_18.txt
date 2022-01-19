@@ -1,0 +1,12 @@
+   1 : -- /* list11_18.lua */
+   2 : -- Solution of nonlinear BV problem with non-uniform spatial grid
+   3 : require"odebvfd"
+   4 : 
+   5 : f = function(x,y,yp,ypp) -- Differntial equation
+   6 : 	return ypp + 4*yp^2
+   7 : end
+   8 : 
+   9 : x = xgp(0,1,1.e-6) -- Geometric distribution
+  10 : s,err,nn = ode1fde(f,x,{0,2}) -- Solve equation
+  11 : print('Number of Newton iterations = ',nn) -- # Newton iterations and errors
+  12 : plot(s); write_data('list11_18.dat',s,err); plot(err)

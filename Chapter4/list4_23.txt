@@ -1,0 +1,43 @@
+   1 : -- /* File Matrix.lua */
+   2 : -- Package for Matrix algebra and functions -- Restricted to 2 dimensional matrices
+....
+ 141 : function Matrix.LUdecompose(a,n) -- LU decomposition of a matrix
+ 142 : 	local d,TINY = 1,1.e-100
+ 143 : 	local imax,big,dum,sum,temp
+ 144 : 	local vv,indx = {},{}
+ 145 : 	n = n or #a
+ 146 : 	for i=1,n do -- Loop over rows for scaling informatio
+ 147 : 		big = 0
+ 148 : 		for j=1,n do -- Find largest element in row j
+ 149 : 			temp = abs(a[i][j])
+ 150 : 			if temp > big then big = temp end
+ 151 : 		end
+ 152 : 		if big==0 then print("Singular martix in LUdecompose") end
+ 153 : 		vv[i] = 1/big -- Scale factor
+ 154 : 	end
+ 155 : 	for j=1,n do -- This is the main loop for Crout's method
+ 156 : 		for i=1,j-1 do
+ 157 : 			sum = a[i][j]
+ 158 : 			for k=1,i-1 do sum = sum - a[i][k]*a[k][j] end
+ 159 : 			a[i][j] = sum
+ 160 : 		end
+ 161 : 		big = 0
+ 162 : 		for i=j,n do
+ 163 : 			sum = a[i][j]
+ 164 : 			for k=1,j-1 do sum = sum - a[i][k]*a[k][j] end
+ 165 : 			a[i][j],dum = sum, vv[i]*abs(sum)
+ 166 : 			if dum>= big then big,imax = dum,i end
+ 167 : 		end
+ 168 : 		if j~=imax then -- Interchange rows
+ 169 : 			a[imax],a[j] = a[j],a[imax] 
+ 170 : 			vv[imax],d = vv[j],-d
+ 171 : 		end
+ 172 : 		indx[j] = imax
+ 173 : 		if a[j][j]==0 then a[j][j] = TINY end -- Singular matrix, but continue
+ 174 : 		if j~=n then -- Divide by pivot element
+ 175 : 			dum = 1/a[j][j]
+ 176 : 			for i=j+1,n do a[i][j] = a[i][j]*dum end
+ 177 : 		end
+ 178 : 	end
+ 179 : 	return a,indx,d -- LU matrix, interchange table and sign
+ 180 : end

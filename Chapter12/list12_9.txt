@@ -1,0 +1,32 @@
+   1 : -- /* File list12_9.lua */
+   2 : -- Programs to integrate nonlinear diffusion equation in one spatial variable
+   3 : 
+   4 : require'odebvfd'
+   5 : -- Model equations to be solved
+   6 : D00,D10,E0,E1 = 0.05, 0.95, 3.5, 3.5 -- Diffusion coeff parameters
+   7 : T = 1000+273 -- temperature
+   8 : D0 = D00*math.exp(-E0/(0.026*T/300))
+   9 : D1 = D10*math.exp(-E1/(0.026*T/300))
+  10 : ni = 7.14e18; ur = 0.0; x,u = {},{}
+  11 : L = 43; ul = 1e21; ex = 'a' -- Change as desired
+  12 : --L = 30; ul = 5e20; ex = 'b'
+  13 : --L = 14; ul = 1e20; ex = 'c'
+  14 : --L = 10; ul = 5e19; ex = 'd'
+  15 : --L = 6; ul = 1e19; ex = 'e'
+  16 : --L = 4; ul = 5e18; ex = 'f'
+  17 : --L = 4; ul = 1e18; ex = 'g'
+  18 : --L = 4; ul = 1e17; ex = 'h'
+  19 : Dr = D1*ul/(D0*ni)
+  20 : print(1/(2*math.sqrt(D0*1e3)),D0,D1)
+  21 : 
+  22 : eq = function(x,u,up,upp) -- Equations with time and spatial derivatives
+  23 : 	D = 1 + Dr*u
+  24 : 	return D*upp + (Dr*up + 2*x)*up
+  25 : end
+  26 : 
+  27 : Nx = 10000 -- spatial steps, time steps
+  28 : -- Set up x and u arrays
+  29 : for i=1,Nx+1 do x[i] = (i-1)*L/Nx end 
+  30 : u,nn,err1,err2 = ode1fd(eq,x,{1.0,0})
+  31 : 
+  32 : plot(u); write_data('list12_9'..ex..'.dat',u)

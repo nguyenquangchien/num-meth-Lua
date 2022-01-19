@@ -1,0 +1,126 @@
+   1 : -- File pde2bv.lua --
+   2 : -- Code for PDE BV problems in 2 dimensions -- rectangular grid of points
+   3 : require'sdgauss'
+   4 : setup2bveqs = function(eqs,x,y,u,ndg) -- Set up 2D equation set
+   5 : 	-- u is assumed to have the form u[j][i], j -> y grid and i -> x grid
+   6 : 	local u = u
+   7 : 	local uxx,ux,uij,uy,uyy,fxx,mxx,vx,xy
+   8 : 	local nx,ny,ndx,ndy = #x, #y, 0, 0
+   9 : 	local fctuxx,fctux,fctu,fctuy,fctuyy = FACT,FACT,FACT,FACT,FACT
+  10 : 	local a, b = Spmat.new(nx,ny), Spmat.new(nx,-ny)
+  11 : 	local sx,sy,ffxx,ffyy = {},{},{0,0,0}, {0,0,0}
+  12 : 	local alfxi,alfyi,fx1,fx2,fx3,fy1,fy2,fy3
+  13 : 	if #u~=nx*ny then -- for u in x,y format
+  14 : 		local ux = {} 
+  15 : 		for j=1,ny do for i=1,nx do m = i + (j-1)*nx; ux[m] = u[j][i] end end
+  16 : 		u = ux 
+  17 : 	end
+  18 : 	for i=1,nx-1 do sx[i] = x[i+1] - x[i] end
+  19 : 	for j=1,ny-1 do sy[j] = y[j+1] - y[j] end
+  20 : 	local function setx(fxc,ffxc) -- Store x oriented elements
+  21 : 		if fxc~=0.0 then for k=1,3 do
+  22 : 			mxx = mx+k-2
+  23 : 			if mxx==m and ndg~=nil then am[mxx][1] = am[mxx][1] + fxc*ffxc[k] 
+  24 : 			else am[mxx] = (am[mxx] or 0) + fxc*ffxc[k] end
+  25 : 		end end
+  26 : 	end
+  27 : 	local function sety(fyc,ffyc) -- Store y oriented elements
+  28 : 		if fyc~=0.0 then for k=1,3 do
+  29 : 			mxx = my +(k-2)*nx
+  30 : 			if mxx==m and ndg~=nil then am[mxx][2] = am[mxx][2] + fyc*ffyc[k]
+  31 : 			else am[mxx] = (am[mxx] or 0) + fyc*ffyc[k] end
+  32 : 		end end
+  33 : 	end
+  34 : 	local function bound(eq,x,uji,ux,uy,ij,nfeq)
+  35 : 		if nfeq<4 then 
+  36 : 			fv = eq(x,uji,uy,ux,ij)
+  37 : 			fu1 = (eq(x,uji,uy,ux+fctux,ij)-fv)/fctux
+  38 : 			fu2 = (eq(x,uji,uy+fctuy,ux,ij)-fv)/fctuy
+  39 : 			fu = (eq(x,uji+fctu,uy,ux,ij)-fv)/fctu
+  40 : 		else
+  41 : 			fv = eq(x,uji,ux,uy,ij)
+  42 : 			fu1 = (eq(x,uji,ux+fctux,uy,ij)-fv)/fctux
+  43 : 			fu2 = (eq(x,uji,ux,uy+fctuy,ij)-fv)/fctuy
+  44 : 			fu = (eq(x,uji+fctu,ux,uy,ij)-fv)/fctu
+  45 : 		end
+  46 : 		return fv, 0.0, fu1, fu, fu2, 0.0 
+  47 : 	end
+  48 : 	local function getfac(i,j,nfeq)
+  49 : 		eq,xi,yj = eqs[nfeq], x[i], y[j]; uji = u[i+(j-1)*nx] 
+  50 : 		if nfeq==1 then 
+  51 : 			fv = eq(xi,yj,uxx,ux,uji,uy,uyy,i,j)
+  52 : 			return fv, (eq(xi,yj,uxx+fctuxx,ux,uji,uy,uyy,i,j)-fv)/fctuxx,
+  53 : 			(eq(xi,yj,uxx,ux+fctux,uji,uy,uyy,i,j)-fv)/fctux, 
+  54 : 			(eq(xi,yj,uxx,ux,uji+fctu,uy,uyy,i,j)-fv)/fctu,
+  55 : 			(eq(xi,yj,uxx,ux,uji,uy+fctuy,uyy,i,j)-fv)/fctuy, 
+  56 : 			(eq(xi,yj,uxx,ux,uji,uy,uyy+fctuyy,i,j)-fv)/fctuyy
+  57 : 		else
+  58 : 			if nfeq<4 then return bound(eq,xi,uji,ux,uy,i,nfeq)
+  59 : 			else return bound(eq,yj,uji,ux,uy,j,nfeq) end
+  60 : 		end
+  61 : 	end
+  62 : 	mxx,vx,vy = 0.0, nx/abs(x[nx]-x[1]), ny/abs(y[ny]-y[1])
+  63 : 	for j=1,ny do for i=1,nx do -- Find maximum solution value
+  64 : 		mxx = max(mxx,abs(u[i+(j-1)*nx])) 
+  65 : 	end end
+  66 : 	if mxx~=0.0 then -- Scale probe factors to maximum solution value
+  67 : 		fctu = FACT*mxx
+  68 : 		fctuxx,fctux,fctuy,fctuyy = fctu*vx^2, fctu*vx, fctu*vy, fctu*vy^2
+  69 : 	end
+  70 : 	for j=1,ny do -- Loop over y-dimensions
+  71 : 		for i=1,nx do -- Loop over x-dimensions
+  72 : 			if j==1 then -- Bottom boundary row
+  73 : 				alfyi = sy[2]/sy[1]; fxx = 1/(alfyi*(sy[2]+sy[1]))
+  74 : 				fy1,fy2,fy3,ndy,nfeq = -alfyi*(2+alfyi)*fxx,(1+alfyi)^2*fxx,-fxx,1,2
+  75 : 			elseif j==ny then -- Top boundary
+  76 : 				alfyi = sy[ny-1]/sy[ny-2]; fxx = 1/(alfyi*(sy[ny-1]+sy[ny-2]))
+  77 : 				fy1,fy2,fy3,ndy,nfeq = alfyi^2*fxx,-(1+alfyi)^2*fxx,(1+2*alfyi)*fxx,-1,3
+  78 : 			else -- General interior point
+  79 : 				alfyi = sy[j]/sy[j-1]; fxx = 1/(alfyi*(sy[j]+sy[j-1]))
+  80 : 				fy1,fy2,fy3,ndy = -alfyi^2*fxx,(alfyi^2-1)*fxx,fxx,0
+  81 : 				fxx = 2/(sy[j]*(sy[j]+sy[j-1]))
+  82 : 				ffyy = {alfyi*fxx,-(alfyi+1)*fxx,fxx}
+  83 : 				if j>1 and j<ny then nfeq = 1 end
+  84 : 			end
+  85 : 			if i==1 then -- Left boundary
+  86 : 				alfxi = sx[2]/sx[1]; fxx = 1/(alfxi*(sx[2]+sx[1]))
+  87 : 				fx1,fx2,fx3,ndx = -alfxi*(2+alfxi)*fxx,(1+alfxi)^2*fxx,-fxx,1
+  88 : 				if j>1 and j<ny then nfeq = 4 end
+  89 : 			elseif i==nx then -- Right boundary
+  90 : 				alfxi = sx[nx-1]/sx[nx-2]; fxx = 1/(alfxi*(sx[nx-1]+sx[nx-2]))
+  91 : 				fx1,fx2,fx3,ndx = alfxi^2*fxx,-(1+alfxi)^2*fxx,(1+2*alfxi)*fxx,-1
+  92 : 				if j>1 and j<ny then nfeq = 5 end
+  93 : 			else -- General interior point
+  94 : 				alfxi = sx[i]/sx[i-1]; fxx = 1/(alfxi*(sx[i]+sx[i-1]))
+  95 : 				fx1,fx2,fx3,ndx = -alfxi^2*fxx,(alfxi^2-1)*fxx,fxx,0
+  96 : 				fxx = 2/(sx[i]*(sx[i]+sx[i-1]))
+  97 : 				ffxx = {alfxi*fxx,-(alfxi+1)*fxx,fxx}
+  98 : 				if j>1 and j<ny then nfeq = 1 end
+  99 : 			end
+ 100 : 			-- Now evaluate derivatives
+ 101 : 			if j==1 or j==ny then jj,ii = j+ndy, i
+ 102 : 			elseif i==1 or i==nx then jj,ii = j, i+ndx
+ 103 : 			else jj,ii = j, i end
+ 104 : 			m = ii + (jj-1)*nx
+ 105 : 			ujim,uji,ujip,ujmi,ujpi = u[m-1], u[m], u[m+1], u[m-nx], u[m+nx]
+ 106 : 			ux,uxx = fx1*ujim + fx2*uji + fx3*ujip, ffxx[1]*ujim + ffxx[2]*uji + ffxx[3]*ujip
+ 107 : 			uy,uyy = fy1*ujmi + fy2*uji + fy3*ujpi, ffyy[1]*ujmi + ffyy[2]*uji + ffyy[3]*ujpi 
+ 108 : 			-- Now probe equations for dependences
+ 109 : 			fv, fxx,fx,fu,fy,fyy = getfac(i,j,nfeq)
+ 110 : 			m = i + (j-1)*nx; b[m] = -fv -- Equation number -- diagonal is at m,m
+ 111 : 			am = a[m] -- work on mth row
+ 112 : 			if ndg==nil then am[m] = 0 else am[m] = {0,0,0} end
+ 113 : 			if fu~=0.0 then -- Now store diagonal elements
+ 114 : 				if ndg==nil then am[m] = fu 
+ 115 : 				else am[m][3] = 0.5*fu end 
+ 116 : 			end
+ 117 : 			mx, my  = m+ndx, m+ndy*nx
+ 118 : 			ffx, ffy = {fx1,fx2,fx3}, {fy1,fy2,fy3}
+ 119 : 			setx(fxx,ffxx); setx(fx,ffx) -- Store x oriented elements
+ 120 : 			sety(fy,ffy); sety(fyy,ffyy) -- Store y oriented elements
+ 121 : 		end
+ 122 : 	end
+ 123 : 	return a,b -- Return matrix elements
+ 124 : end
+ 125 : setfenv(setup2bveqs,{table=table,Spmat=Spmat,abs=math.abs,max=math.max,FACT=1.e-4,
+ 126 : print=print})

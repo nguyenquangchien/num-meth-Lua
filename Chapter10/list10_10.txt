@@ -1,0 +1,35 @@
+   1 : -- /* File list10._0.lua */
+   2 : -- Programs to integrate first order diff. equation using odeiv()
+   3 : require"odeiv"; exp = math.exp; abs = math.abs
+   4 : 
+   5 : f1 = function(eqs,t,y,yp) -- test of stiff differential eqns
+   6 : 	eqs[1] = yp[1] + 1001*y[1] - 999*y[2]
+   7 : 	eqs[2] = yp[2] - 999*y[1] + 1001*y[2]
+   8 : end
+   9 : -- TP Solution with step sizes of 2h and h
+  10 : s1 = odeiv(f1,{0,{1.e-4,1.e-3,1.e-2,0.1,1,10},200},{0,2})
+  11 : s2 = odeiv(f1,{0,{1.e-4,1.e-3,1.e-2,0.1,1,10},400},{0,2})
+  12 : 
+  13 : -- Evaluate estimated error given two solutions with h and 2h step sizes
+  14 : erra = odeerror(s1,s2) -- Evaluation of estimated error
+  15 : print(errstat(erra[2])) -- errstat() returns statistics of error estimate
+  16 : print(errstat(erra[3])) -- returns RMS, maximum, point #, average for errors
+  17 : 
+  18 : -- Calculate exact solution, corrected solution and actual errors obtained 
+  19 : yexact,ycorrected,err1,err2,nd = {},{},{},{},#s2[1]
+  20 : for i=1,nd do yexact[i] = exp(-2*s2[1][i])+exp(-2000*s2[1][i]) end
+  21 : for i=1,nd do ycorrected[i] = s2[3][i] - erra[3][i] end
+  22 : for i=1,nd do 
+  23 : 	err1[i] = abs(yexact[i] - s2[3][i]) -- Error in TP solution
+  24 : 	err2[i] = abs(yexact[i] - ycorrected[i]) -- Error in corrected solution
+  25 : end
+  26 : print(errstat(err1))
+  27 : print(errstat(err2))
+  28 : plot(s1[1],err1)
+  29 : 
+  30 : -- Solve ODE by TP and return solution and error estimate -- odeive()
+  31 : s3,err,n2 = odeive(f1,{0,{1.e-4,1.e-3,1.e-2,0.1,1,10},400},{0,2})
+  32 : print(errstat(err[2]))
+  33 : print(errstat(err[3]))
+  34 : write_data("list10_10.dat",s2,s1,s3,erra,err,err1,err2)
+  35 : write_data(20,"list10_101.dat",s2,s1,s3,erra,err,err1,err2)

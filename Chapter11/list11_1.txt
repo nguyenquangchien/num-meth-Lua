@@ -1,0 +1,28 @@
+   1 : -- /* File list11_1.lua */
+   2 : -- Shooting method for boundary value problem
+   3 : 
+   4 : require"odeiv"; require"newton"
+   5 : 
+   6 : -- Parameters
+   7 : T,E,I,w,L = 500, 1.e7, 500, 100, 100
+   8 : EI = E*I; print('w,EI =',w,EI)
+   9 : y0, yL,nx = 0, 0, 2000 -- Boundary values,  #x values
+  10 : 
+  11 : f = function(eq,x,u,up) -- Differntial equations
+  12 : 	eq[1] = up[1] - u[2]
+  13 : 	eq[2] = up[2] - T*u[1]/EI - w*x*(x-L)/(2*EI)
+  14 : end
+  15 : 
+  16 : bvalue = function(up) -- Boundary function, up is derivative at x = 0
+  17 : 	s1 = odeiv(f,{0,L,nx},{0,up}) -- Solve initial value problem
+  18 : 	return s1[2][nx+1] - yL -- Return difference in boundary value
+  19 : end
+  20 : 
+  21 : yp = 0 -- Initial guess at derivative
+  22 : yp,nm,err = newton(bvalue,yp) -- Use Newton's method to satisfy boundary value
+  23 : print('Initial derivative, #iterations, errors =',yp,nm,err,bvalue(yp))
+  24 : s2 = odeiv(f,{0,L,nx},{0,yp*1.1}) -- Larger derivative
+  25 : s3 = odeiv(f,{0,L,nx},{0,yp/1.1}) -- Smaller derivative
+  26 : plot(s1[1],s1[2],s2[2],s3[2])
+  27 : write_data("list11_1.dat",s1,s2,s3)
+  28 : 

@@ -1,0 +1,43 @@
+   1 : -- /* File list6_9.lua */ -- Interpolation for several tables
+   2 : require"intp"
+   3 : require"spline"
+   4 : 
+   5 : --xd = {-2,-1.5,-1,-.5,0,.5,1,1.5,2} -- Example of pulse-like function
+   6 : --yd = {0,0,0,.87,1,.87,0,0,0} -- example a
+   7 : --xmin,xmax,dx = -2,2,.01
+   8 : --xd = {1,2,3,4,5,6,7,8,9,10} -- Example of linear line with step
+   9 : --yd = {3.5,3,2.5,2,1.5,-2.4,-2.8,-3.2,-3.6,-4}  -- example b
+  10 : --xmin,xmax,dx = 1,10,.02
+  11 : --xd = {-4,-3,-2,-1,0,1,2,3,4} -- Impulse like function
+  12 : --yd = {0,0,0,0,1,0,0,0,0} -- example c
+  13 : --xmin,xmax,dx = -4,4,.02
+  14 : --xd = {-1,-.5,0,.5,1} --Second pulse like
+  15 : --yd = {0.0385,0.1379,1,0.1379,0.0385} -- example d
+  16 : --xmin,xmax,dx = -1,1,.005
+  17 : --xd = {0,1,2,3} -- Sparse data
+  18 : --yd = {0,1,4,3} -- example e
+  19 : --xmin,xmax,dx = 0,3,.05
+  20 : --xd = {40,48,56,64,72} -- vapor pressure of water
+  21 : --yd = {55.3,83.7,123.8,179.2,254.5} -- example f
+  22 : --xmin,xmax,dx = 40,72,.05
+  23 : xd = {-200,-100,0,100,200,300,400,500} -- Type T thermocouple
+  24 : yd = {-4.111,-2.559,-.67,1.517,3.967,6.647,9.525,12.575} -- g
+  25 : xmin,xmax,dx = -200,500,1
+  26 : 
+  27 : flcb = intpf(xd,yd) -- Define local cubic interpolation fcn
+  28 : fcsp = splinef(xd,yd) -- Define cubic spline interpolation fcn
+  29 : 
+  30 : x,ylcb,ycsp = {},{},{}
+  31 : xv,i=xmin,1-- Calculate interpolated values
+  32 : for xv=xmin,xmax+.001,dx do
+  33 : 	x[i], ylcb[i], ycsp[i] = xv, flcb(xv), fcsp(xv)
+  34 : 	i = i+1
+  35 : end
+  36 : write_data("list6_9table.dat",xd,yd)
+  37 : write_data("list6_9interp.dat",x,ylcb,ycsp)
+  38 : 
+  39 : 
+  40 : 
+  41 : 
+  42 : 
+  43 : 

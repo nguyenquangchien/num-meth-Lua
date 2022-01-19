@@ -1,0 +1,20 @@
+   1 : -- /* File list7_12.lua */ -- Reversed independent and dependent variables
+   2 : 
+   3 : require"nlstsq"
+   4 : xd,yd,ycalc = {},{},{}
+   5 : read_data('list7_1.dat',xd,yd)
+   6 : 
+   7 : ft = function(x,c) -- Define function to fit data
+   8 : 	return c[1]*(1 - c[2]*math.exp(c[3]*x[2])) - x[1]
+   9 : end
+  10 : frev = function(x,c) -- Reverse variables to fitted function
+  11 : 	return ft({x[2],x[1]},c)
+  12 : end
+  13 : 
+  14 : c = {1,1,-.2} -- Initial guess at coefficients
+  15 : del,err,nmax = nlstsq({xd,yd},fw,frev,c) -- Call fiting 
+  16 : print(err,nmax) -- print results
+  17 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  18 : for i=1,#xd do ycalc[i] = ft({0,xd[i]},c) end
+  19 : write_data('list7_12.dat',xd,yd,ycalc)
+  20 : plot(xd,yd,ycalc)

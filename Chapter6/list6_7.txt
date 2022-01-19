@@ -1,0 +1,22 @@
+   1 : -- /* File list6_7.lua */ -- Function inversion by Interpolation 
+   2 : require"intp"
+   3 : 
+   4 : x,i = 0,1
+   5 : xd,yd = {},{}
+   6 : while x<18. do -- Generate table of values
+   7 : 	xd[i] = x
+   8 : 	yd[i] = math.log(1+x^2)/(1+.2*math.atan(x))
+   9 : 	i,x = i+1, x+.5
+  10 : end
+  11 : fx = intpf(yd,xd) -- Define interpolation function
+  12 : xf,yv = {},{}
+  13 : i=1
+  14 : for y=0,4,.01 do
+  15 : 	yv[i] = y
+  16 : 	xf[i] = fx(y) -- Use the new inverse function
+  17 : 	i = i+1
+  18 : end
+  19 : print(fx(1),fx(2),fx(3)) -- Print selected values 	
+  20 : write_data('test1.dat',xd,yd)
+  21 : write_data('test2.dat',yv,xf)
+  22 : plot(yv,xf)

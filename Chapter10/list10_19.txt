@@ -1,0 +1,53 @@
+   1 : -- /* File odeiv.lua */
+   2 : -- Programs to integrate first order differential equations
+   3 : require"nsolv"; local atend
+----------
+ 213 : odeb12 = function(feqs,tvals,u,up,upp)
+ 214 : 	local j, neq, t, h, h2,h2sq,hs,hx,hy,hz -- Local variables for function
+ 215 : 	local sol,ynn,yn,jfirst = {},{},{},0
+ 216 : 	local nit,nitt = 0,0 -- Number of iterations
+ 217 : 	local neq = #u
+ 218 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 219 : 	-- Function to calculate next time values using nsolv()
+ 220 : 	local fnext = function(eqs,u) 
+ 221 : 		for m=1,neq do
+ 222 : 			up[m] = (u[m] - yn[m])/h2 -- h2 = h/2 for TP rule, h for BD
+ 223 : 			upp[m] = (u[m] - ynn[m])/h2sq -- h2sq = (h/2)^2 for TP, (h)^2 for BD
+ 224 : 		end
+ 225 : 		feqs(eqs,t,u,up,upp) -- Now call user defined differential equations
+ 226 : 	end
+ 227 : 	-- Use input value for number of intervals or set at default value
+ 228 : 	up,upp = up or {}, upp or {}
+ 229 : 	for m=1,neq+1 do -- Array to return solution values with t value first in array
+ 230 : 		sol[m] = {}
+ 231 : 		if m==1 then sol[m][1] = tmin else sol[m][1] = u[m-1]  end
+ 232 : 	end
+ 233 : 	t = tmin -- Initial t value
+ 234 : 	hs = (tmax - t)/ntval -- Equal increments in t used, no adjusting step size
+ 235 : 	-- If initial derivative not specified, use Backwards differencing for first 4 points
+ 236 : 	if #up~=neq then for m=1,neq do up[m] = up[m] or 0 end end -- Complete initial derivatives 
+ 237 : 	if #upp~=neq then for m=1,neq do upp[m] = 0 end
+ 238 : 		jfirst,h = 0,0.25*hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- Set to BD parameters
+ 239 : 	else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 240 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 241 : 		repeat -- Use backwards differencing for first interval with 4 sub intervals of size h/4
+ 242 : 			jfirst = jfirst+1
+ 243 : 			-- Set up yn, and ynn arrays and get ready to solve equations
+ 244 : 			for m=1,neq do
+ 245 : 				yn[m] = u[m] + hx*up[m] -- hx = 0 or h/2
+ 246 : 				ynn[m] = u[m] + hy*up[m] + hz*upp[m] -- hy=h, hz=0 or (h/2)^2
+ 247 : 				u[m] = u[m] + h*(up[m] + 0.5*h*upp[m]) -- Predicted value of u array
+ 248 : 			end
+ 249 : 			t = t + h -- Now increment t to next t value
+ 250 : 			-- Calculate new u values at next time step, new values are returned in u array
+ 251 : 			nitt = nsolv(fnext,u,step) 
+ 252 : 			if nitt>nit then nit = nitt end -- Monitor maximun number of iterations
+ 253 : 			-- New derivative values, same function as in fnext 
+ 254 : 			for m=1,neq do up[m],upp[m] = (u[m] - yn[m])/h2,(u[m] - ynn[m])/h2sq end
+ 255 : 		until jfirst>=4 -- End of first interval repeat using Backwards difference
+ 256 : 		if k==1 then h = hs; h2,h2sq,hy,hx,hz = h/2,h*h/4,h,h/2,h*h/4 end -- TP parms.
+ 257 : 		sol[1][k+1] = t; for m=1,neq do sol[m+1][k+1] = u[m]	end -- Save values
+ 258 : 	end -- End of main loop on t, now return solution array
+ 259 : 	sol[1][ntval+1] = tmax; return sol,nit -- Solution and maximim number of iterations
+ 260 : end -- End of odeb12
+ 261 : setfenv(odeb12,{nsolv=nsolv,step=nil})

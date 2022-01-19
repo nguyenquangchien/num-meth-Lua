@@ -1,0 +1,57 @@
+   1 : --/* File nsolv.lua */
+   2 : require"gauss"; require"spgauss" -- Make sure gauss and spgauss are loaded
+   3 : 
+   4 : nsolv = function(f,x,step,nx) 
+   5 : 	local nend,wk1,rowptr,b = NMAX,{},{},{} -- work, A, B
+   6 : 	local c1,c2,dx,cmax,ngauss,stp
+   7 : 	if full then ngauss=gauss else ngauss=spgauss end
+   8 : 	if nx==nil then f(b,x); nx = #b end -- Find number of equations
+   9 : 	for ilp=1,NMAX do -- iterate for at most NMAX steps
+  10 : 		for i=1,nx do rowptr[i] = {} end
+  11 : 		f(b,x) -- Values of equations returned in b[]
+  12 : 		for i=1,nx do -- Set up matrix equations
+  13 : 			c1 = x[i]; dx = FACT*c1
+  14 : 			if dx==0.0 then dx = FACT end
+  15 : 			x[i] = x[i]+dx -- Probe x[i] factor
+  16 : 			f(wk1,x); x[i] = c1 -- Results returned in wk1[]
+  17 : 			for j=1,nx do 
+  18 : 				c1 = b[j]-wk1[j]
+  19 : 				if full then rowptr[j][i] = c1/dx
+  20 : 				elseif c1~=0.0 then rowptr[j][i] = c1/dx end
+  21 : 			end
+  22 : 		end
+  23 : 		ngauss(rowptr,b,nx) -- Solve for correction terms -- Solution returned in b[]
+  24 : 		cmax = 0.0
+  25 : 		for i=1,nx do
+  26 : 			if step~=nil and step[i]~=0.0 then -- Skip if no step sizes specified
+  27 : 				stp = step[i]
+  28 : 				if stp<0.0 then -- Limits on absolute change
+  29 : 					if abs(b[i])>-stp then 
+  30 : 					b[i] = -stp*abs(b[i])/b[i] end
+  31 : 				else -- Limits on percentage change
+  32 : 					if stp<1 then stp=1/stp end
+  33 : 					c1 = 1. + b[i]/x[i]
+  34 : 					if c1>stp then 
+  35 : 						b[i] = (stp-1)*x[i] 
+  36 : 					elseif c1<1/stp then 
+  37 : 						b[i] = (1/stp-1)*x[i] 
+  38 : 					end
+  39 : 				end
+  40 : 			end -- End of step{} adjustments, find largest relative error
+  41 : 			c1 = abs(b[i]); c2 = abs(x[i]) + c1
+  42 : 			if c2~=0.0 then c1=c1/c2 end
+  43 : 			if c1>cmax then cmax=c1 end
+  44 : 			x[i] = x[i] + b[i] -- Update solution set
+  45 : 		end
+  46 : 		if linear then nend=ilp; break end -- No iterations needed if linear equations
+  47 : 		if nprint then -- Print iterative solutions
+  48 : 			fprintf(stderr,'Solutions at iteration %d are:\n',ilp)
+  49 : 			for i=1,nx do fprintf(stderr,'%s  ',tostring(x[i])) end
+  50 : 			fprintf(stderr,'\n'); stderr:flush()
+  51 : 		end
+  52 : 		if cmax < ERROR then nend=ilp; break end
+  53 : 	end
+  54 : 	return nend,cmax -- Return number of iterations and error, solution returned in x array
+  55 : end
+  56 : setfenv(nsolv,{stderr=io.stderr,gauss=gauss,spgauss=spgauss,tostring=tostring,fprintf=fprintf,
+  57 : 	abs=(Complex or math).abs,ERROR=2.e-6,FACT=1.e-6,NMAX=100,nprint=nil,linear=nil,full=nil})

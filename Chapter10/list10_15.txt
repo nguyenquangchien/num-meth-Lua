@@ -1,0 +1,41 @@
+   1 : -- /* File odeiv.lua */
+   2 : -- Programs to integrate first order differential equations
+   3 : require"nsolv"; local atend
+---------- 
+ 110 : odebrk = function(feqs,tvals,u,up,upp) -- Basic Runge-Kutta ODE integration code
+ 111 : 	local j, neq, t, h, h2 -- Local variables for function
+ 112 : 	local sol, m1,m2,m3,m4,u1 = {}, {}, {}, {}, {}, {}
+ 113 : 	local nit,nitt = 0,0 -- Number of iterations
+ 114 : 	local neq = #u -- Number of equations 
+ 115 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 116 : 	
+ 117 : 	fderiv = function(eqs,up) -- Function for calculating derivatives
+ 118 : 		feqs(eqs,t,u1,up)
+ 119 : 	end
+ 120 : 	-- Use input value for number of intervals or set at default value
+ 121 : 	if type(up)~='table' then up = {} end
+ 122 : 	for m=1,neq+1 do -- Array to return solution values with t value first
+ 123 : 		sol[m] = {}
+ 124 : 		if m==1 then sol[m][1] = tmin else	sol[m][1] = u[m-1]  end
+ 125 : 	end
+ 126 : 	t = tmin; hs = (tmax - t)/ntval -- Equal increments in t used
+ 127 : 	for m=1,neq do up[m] = 0 end
+ 128 : 	h,h2 = hs,hs/2 -- Set to RK parameters
+ 129 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 130 : 		for m=1,neq do u1[m] = u[m] end
+ 131 : 		nitt = nsolv(fderiv,up,step) -- Update up values
+ 132 : 		for m=1,neq do m1[m] = h*up[m]; u1[m] = u[m] + m1[m]/2 end
+ 133 : 		t = t+h2; nitt = nsolv(fderiv,up,step)+nitt -- next up value
+ 134 : 		for m=1,neq do m2[m] = h*up[m]; u1[m] = u[m] + m2[m]/2 end
+ 135 : 		nitt = nsolv(fderiv,up,step)+nitt -- next up value
+ 136 : 		for m=1,neq do m3[m] = h*up[m]; u1[m] = u[m] +m3[m] end
+ 137 : 		t = t+h2; nitt = nsolv(fderiv,up,step)+nitt -- next up value
+ 138 : 		for m=1,neq do m4[m] = h*up[m] end
+ 139 : 		for m=1,neq do u[m] = u[m] + (m1[m]+2*m2[m]+2*m3[m]+m4[m])/6 end
+ 140 : 		sol[1][k+1] = t -- Save calculated values
+ 141 : 		for m=1,neq do sol[m+1][k+1] = u[m] end
+ 142 : 		if nitt>nit then nit = nitt end -- Monitor maximun # of iterations
+ 143 : 	end -- End of main loop on t, now return solution array
+ 144 : 	return sol,nit/4 -- Solution and maximim number of iterations
+ 145 : end -- End of odebrk
+ 146 : setfenv(odebrk,{type=type,nsolv=nsolv,step=nil})	

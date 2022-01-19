@@ -1,0 +1,54 @@
+   1 : -- /* File list8.10.lua */
+   2 : 
+   3 : require"prob"; require"elemfunc"
+   4 : local Pn = elemfunc.Pn
+   5 : 
+   6 : paper = {}; read_data('paper.txt',paper) -- Data set
+   7 : 
+   8 : Pnms = function(x,mean,std) -- Gaussian definition for tests
+   9 : 	return Pn((x-mean)/std)
+  10 : end
+  11 : KS_test = function(data1,data2,...) -- Includes possible arguments to function
+  12 : 	local arg,nd1,nd2,imax = {...}
+  13 : 	local x1,x2,d1,d2
+  14 : 	local D,dt,dt1,dt2=0,0,0,0
+  15 : 	x1,d1 = makeCDF(data1) -- Make distribuition function
+  16 : 	if type(data2)=='function' then -- Comparison of data to functio()
+  17 : 		nd = #data1
+  18 : 		for i=1,nd do -- Step over data set
+  19 : 			dt = math.abs(d1[i] - data2(x1[i],unpack(arg)))
+  20 : 			if dt>D then D,imax = dt,i end
+  21 : 		end
+  22 : 	else -- Comparison of two distributions in table form
+  23 : 		nd1,nd2 = #data1,#data2
+  24 : 		nd = nd1*nd2/(nd1+nd2)
+  25 : 		x2,d2 = makeCDF(data2)
+  26 : 		local j1,j2,xv1,xv2 = 1,1
+  27 : 		while j1<=nd1 and j2<=nd2 do -- Step over both data sets
+  28 : 			xv1,xv2 = x1[j1],x2[j2]
+  29 : 			if xv1<=xv2 then dt1,j1 = d1[j1],j1+1 end -- next step in data1
+  30 : 			if xv2<=xv1 then dt2,j2 = d2[j2],j2+1 end -- next step in data2
+  31 : 			dt = math.abs(dt1-dt2)
+  32 : 			if dt>D then D,imax = dt,j1 end
+  33 : 		end
+  34 : 	end
+  35 : 	local kstest = D*math.sqrt(nd)
+  36 : 	print('\n\t\t Kolmogorov-Smirnov Goodness-of-Fit Test\n')
+  37 : 	print('Null Hypothesis HO:		Distribution Fits the Data')
+  38 : 	print('Alternate Hypothesis HA:	Distribution does not Fit the Data')
+  39 : 	print('Number of observations = ',engr(nd))
+  40 : 	print('\nK-S test statistic: D, sqrt(N)*D = '..engr(D)..','..engr(kstest)..'(Test value)')
+  41 : 	print('\nConfidence Level\tCutoff\t\tConclusion')
+  42 : 	prob = {.1,.05,.01,.001}
+  43 : 	for j=1,#prob do
+  44 : 		lv = iCDF(Qks,prob[j],1)
+  45 : 		if lv>kstest then print('',engr((1-prob[j])*100,'%'),'',engr(lv),'\t Accept HO')
+  46 : 		else print('',engr((1-prob[j])*100,'%'),'',engr(lv),'\t Reject HO') end
+  47 : 	end
+  48 : 	print('Accept Above Confidence Level of ',engr((1-Qks(kstest))*100,'%\n'))
+  49 : end	
+  50 : 
+  51 : mean,std = stats(paper)
+  52 : KS_test(paper,Pnms,mean,std) -- Call with comparison equation
+  53 : KS_test(paper,Pnms,1.05*mean,std)
+  54 : KS_test(paper,Pnms,mean,1.5*std)

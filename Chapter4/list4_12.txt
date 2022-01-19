@@ -1,0 +1,21 @@
+   1 :  --/* File list4_12.lua */ -- Equations for chemical reaction
+   2 :  
+   3 : require"nsolv"
+   4 : 
+   5 : P = 20 -- Single parameter
+   6 : eqs = function(f,x)
+   7 : 	f[1] = x[1]/2 + x[2] + x[3]/2 -x[6]/x[7]
+   8 : 	f[2] = x[3] + x[4] + 2*x[5] - 2/x[7]
+   9 : 	f[3] = x[1] + x[2] + x[5] -1/x[7]
+  10 : 	f[4] = x[1] + x[2] + x[3] + x[4] + x[5] - 1
+  11 : 	f[5] = P^2*x[1]*x[4]^3 - 1.7837e5*x[3]*x[5]
+  12 : 	f[6] = x[1]*x[3] - 2.6058*x[2]*x[4]
+  13 : 	f[7] = -28837*x[1] - 139009*x[2] - 78213*x[3] + 18927*x[4] +
+  14 : 		8427*x[5] + 13492/x[7] - 10690*x[6]/x[7]
+  15 : end
+  16 : 
+  17 : x = {.5, 0, 0, .5, 0, .5, 2} -- Initial guesses
+  18 : step = {0,0,0,0,0,0,0} -- Try different values
+  19 : nmx,a = nsolv(eqs,x,step) -- Solve equations
+  20 : print('Number of iterations, error = ',nmx,a)
+  21 : table.foreach(x,print)

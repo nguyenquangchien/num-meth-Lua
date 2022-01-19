@@ -1,0 +1,18 @@
+   1 : --- /* File list10_27.lua */
+   2 : -- Programs to integrate surface charge differential equation
+   3 : 
+   4 : require"odeiv"
+   5 : 
+   6 : a,a0 = {.1,.2,.5,1,2,5,10}, {0,0,0,0,0,0,0}
+   7 : na = #a
+   8 : 
+   9 : f = function(eqs,t,f,fp) -- Define equations with multiple a values
+  10 : 	for i=1,na do eqs[i] = f[i]*fp[i] + f[i]*(1-a[i]) - a[i] end
+  11 : end
+  12 : 
+  13 : s1,err1 = odeivse(f,{0,100},a0)
+  14 : print(unpack(maxvalue(s1))) ; print(unpack(maxvalue(err1)))
+  15 : plot(s1); plot(err1)
+  16 : 
+  17 : write_data("list10_27.dat",s1,err1)
+  18 : 

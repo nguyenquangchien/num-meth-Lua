@@ -1,0 +1,40 @@
+   1 : --/* File mcpar.lua */
+   2 : 
+   3 : require"prob"; require"nlstsq"
+   4 : 
+   5 : MCpar = function(yx, fw, ft, c, actv, step, nmx) 
+   6 : 	local cvar,cc = {},{}
+   7 : 	local xd = yx[2]
+   8 : 	local nc,nd,y,yv = #c,#xd,{},{}
+   9 : 	local k,kp,nnmx,nnm = 1,1,0
+  10 : 	local NTM = getfenv(nlstsq).NMAX-1 -- Max Newton iterations
+  11 : 	for i=1,nc do cvar[i] = {} end
+  12 : 	for i=1,nd do 
+  13 : 		y[i] = newtonfc(ft,{yx[1][i],xd[i]},c) 
+  14 : 		yv[i] = y[i] - yx[1][i]
+  15 : 	end
+  16 : 	local _,sdev = stats(yv)
+  17 : 	getfenv(nlstsq).nprint=0 -- Don't print iteration values
+  18 : 	nmx = nmx or NMAX -- Default of 1000 iterations
+  19 : 	while k<=nmx do -- Now MC loop
+  20 : 		for i=1,nc do cc[i] = c[i] end -- Initial guess at C's
+  21 : 		for i=1,nd do yv[i] = y[i] + sdev*gnormal() end -- New generated data set
+  22 : 		_,_,nnm = nlstsq({yv,xd},fw,ft,cc,actv,step) -- Analysis for C's
+  23 : 		if nnm>=NTM then 
+  24 : 			print('Convergence not achieved for MC #',k); io.flush() 
+  25 : 		else 
+  26 : 			for i=1,nc do cvar[i][k] = cc[i] end -- Save C values
+  27 : 			k = k+1
+  28 : 		end
+  29 : 		if nnm>nnmx then nnmx = nnm end
+  30 : 		if nprint~=nil then
+  31 : 			if kp==NP then print('Completed MC simulation #',k-1)
+  32 : 			io.flush(); kp = 0 end
+  33 : 		end
+  34 : 		kp = kp+1
+  35 : 	end
+  36 : 	return cvar, nnmx -- Return array of C values as {{c[1]'s},{c[2]'s},...{c[n]'s}}
+  37 : end
+  38 : setfenv(MCpar,{NMAX=1000,NP=100,stats=stats,print=print,io=io,newtonfc=newtonfc,
+  39 : 	getfenv=getfenv,nlstsq=nlstsq,gnormal=gnormal,nprint=nil})
+  40 : 

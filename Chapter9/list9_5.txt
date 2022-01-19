@@ -1,0 +1,17 @@
+   1 : -- /* File list9_5.lua */ Analysis of joint confidence limits
+   2 : 
+   3 : require"cltwodim"
+   4 : 
+   5 : c = {{},{},{}} -- C[] arrays
+   6 : read_data('list9_3a.dat',c) -- Read first 3 columns of file
+   7 : clim,xyb,cxx = cltwodim(c[1],c[3],90) -- 90% confidence limits
+   8 : clim2,xyb2,cxx2 = cltwodim(c[1],c[3],95) -- 95% confidence limits
+   9 : for i=1,2 do
+  10 : 	for j=1,2 do 
+  11 : 		print('c['..i..'], 95% limits = ',clim2[i][j],
+  12 : 		'90% limits = ',clim[i][j])
+  13 : 	end
+  14 : end
+  15 : scatterplot(c[1],c[3],xyb,cxx,xyb2,cxx2)
+  16 : write_data('list9_5.dat',c,xyb,cxx,xyb2,cxx2) -- Save for plotting
+  17 : 

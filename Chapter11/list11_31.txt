@@ -1,0 +1,31 @@
+   1 : -- /* list11_31.lua */
+   2 : -- Estimation of parameters for first order differential equation
+   3 : require"odeiv"; require"nlstsq"; require"intp"
+   4 : getfenv(nlstsq).ylinear = 1 -- Not required 
+   5 : 
+   6 : t,ct = {},{}; read_data('conc.txt',t,ct) -- Data points
+   7 : 
+   8 : c = {.3, 1.0, 24} -- Guess at Differential eqn.  coefficients
+   9 : nt = 200 -- Number of time intervals for integration
+  10 : xmin,xmax,nd = 0.0, 20, #t -- number of data points
+  11 : xx = {xmin, xmax, nt} -- nt time intervals
+  12 : step = {2,1.1,0} -- nlstsqi parameters
+  13 : --actv = {1, 0, 1} -- Fix exponent at 1.0 -- Try it !!!
+  14 : 
+  15 : ft = function(eqt,x,u,up)  -- Differential equation
+  16 : 	eqt[1] = up[1] + c[1]*u[1]^c[2]
+  17 : end
+  18 : 
+  19 : feq = function(yx,c,id) -- Equation for nlstsq()
+  20 : 	xv = yx[2]
+  21 : 	if xv==xmin then -- Some coefficient has changed
+  22 : 		s = odeiv(ft,xx,{c[3]}) -- Solve differential equation
+  23 : 		xt,con = s[1],s[2]
+  24 : 	end -- New solution now available
+  25 : 	return intp(xt,con,xv) - yx[1] -- Return solved DE value
+  26 : end
+  27 : del,err,nmax = nlstsq({ct,t},fw,feq,c,actv,step) 
+  28 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.3e\n',i,c[i],del[i]) end
+  29 : s = odeiv(ft,xx,{c[3]}) -- Final solution of DE
+  30 : write_data('list11_31.dat',s,t,ct)
+  31 : plot(s,{t,ct})

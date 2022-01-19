@@ -1,0 +1,14 @@
+   1 : -- File list2.6 -- Examples of some functions in init.lua
+   2 : -- Uncomment next line if needed
+   3 : -- require"init" -- Load basic Lua functions
+   4 : 
+   5 : -- List known objects and type (in _G table)
+   6 : help() -- Same as whatis(_G)
+   7 : -- List entries in math table -- names and types
+   8 : whatis(math)
+   9 : -- Probe object type of math.sin and math.pi
+  10 : whatis(math.sin); whatis(math.pi)
+  11 : -- Make sin a globally known function
+  12 : sin = math.sin; whatis(sin)
+  13 : -- Probe a string
+  14 : whatis(_VERSION)

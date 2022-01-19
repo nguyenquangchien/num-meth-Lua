@@ -1,0 +1,21 @@
+   1 : -- /* list3_7.lua */ -- Newton's method solution for diode circuit
+   2 : 
+   3 : require "newton_1"
+   4 : 
+   5 : Vs,R,Is,vt = 15.00,1.e3,1.e-14,.026 -- Circuit and device parameters
+   6 : xa,vo,vsa = {},{},{} -- Define empty arrays to hold calculated values
+   7 : 
+   8 : -- Rectifier circuit equation to be solved
+   9 : function fv(v) return vs - v - R*Is*(math.exp(v/vt) - 1) end 
+  10 : 
+  11 : nmx = 0
+  12 : for i=1,401 do -- Select 400 intervals for calculation
+  13 : 	x = (i-1)*4*math.pi/(400) -- Angle value
+  14 : 	vs = Vs*math.sin(x) -- source voltage
+  15 : 	vd,n,err = newton(fv, 0.8) -- diode voltage by Newton's method
+  16 : 	nmx = math.max(nmx,n) -- Check on convergence
+  17 : 	xa[i], vo[i], vsa[i] = x, vs-vd, vs -- Save arrays
+  18 : end
+  19 : print('Maximum number of iterations =',nmx)
+  20 : write_data('list3_7.dat',xa,vsa,vo)
+  21 : plot(xa,vsa,vo)

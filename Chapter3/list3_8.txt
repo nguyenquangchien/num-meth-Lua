@@ -1,0 +1,33 @@
+   1 : --/* File newton.lua */
+   2 : -- Solves a nonlinear equation f(x)=0 for the solution value x, with step limit per iteration
+   3 : 
+   4 : function newton(f,x,step) -- step may be omited in calling
+   5 : 	if step then if step>0.0 and step<1.0 then step = 1./step end end
+   6 : 	nend = NTT
+   7 : 	for i=1,NTT do
+   8 : 		dx = x*FACT
+   9 : 		if dx==0.0 then dx = FACT end -- Protect against zero
+  10 : 		fx = f(x)
+  11 : 		cx = fx - f(x+dx)
+  12 : 		cx = fx*dx/cx -- Correction to x value
+  13 : 		if step and step~=0.0 then -- Skip if no step size specified
+  14 : 			if step<0.0 then -- Limit absolute step size
+  15 : 				if abs(cx)>-step then cx = -step*(cx/abs(cx)) end
+  16 : 			else -- Limit percentage increase in solution value
+  17 : 				dx = 1. + cx/x
+  18 : 				if dx>step then 
+  19 : 					cx = (step-1)*x 
+  20 : 				elseif dx<1/step then 
+  21 : 					cx = (1/step-1)*x 
+  22 : 				end
+  23 : 			end
+  24 : 		end -- End of step adjustment
+  25 : 		x = x + cx
+  26 : 		if nprint then print("Iteration ",i,x,dx) end -- Print values at each iteration
+  27 : 		dx = abs(cx) + abs(x)
+  28 : 		if dx==0.0 or abs(cx/dx)<ERR then nend = i; break end
+  29 : 	end
+  30 : 	return x,nend,cx/dx
+  31 : end
+  32 : -- Make all variables and constants local to newtonl
+  33 : setfenv(newton, {abs=(Complex or math).abs,FACT=1.e-6,ERR=1.e-9,NTT=200,nprint=nil,print=print})

@@ -1,0 +1,40 @@
+   1 : -- /* File list4_11.lua  */
+   2 : -- Programs #2 for the frequency response of an amplifier
+   3 : 
+   4 : require"Complex"; require"gauss" -- load complex variable support
+   5 : --require"spgauss"; gauss = spgauss -- Try spgauss()
+   6 : -- Circuit Parameters
+   7 : Rs,Rp,Re,Ru,Ro,Rc,Rl = 100, 20000, 200, 200000, 100000, 4000, 10000
+   8 : Cs,Ce,Cc,Cp,Cu,Cce = 1.e-6, 10e-6, 2.e-6, 5.e-12, 1.e-12, 1.5e-12
+   9 : gm = .01; vs = 1
+  10 : -- Frequency factors
+  11 : fact = 10^0.1-- 10 Points per decade in frequency
+  12 : f = 1.0 -- Begin at frequency of 1Hz
+  13 : jw = j*2*math.pi*f
+  14 : 
+  15 : sol = {{},{},{},{},{}} -- Table of 5 empty tables
+  16 : local c=os.clock()
+  17 : nmax = 91; v = {0,0,0,0} -- initial guesses -- values not critical
+  18 : local t1=os.clock()
+  19 : -- Second approach -- Set up matrix equations 
+  20 : for i=1,nmax do -- gmat is conductance matrix of coefficients
+  21 : 	gmat = {{(1/(Rs+1/(jw*Cs))+1/Rp+jw*Cp+1/Ru+jw*Cu), (-1/Rp-jw*Cp), (-1/Ru-jw*Cu),0},
+  22 : 		{(-1/Rp-jw*Cp-gm),(1/Rp+jw*Cp+1/Re+jw*Ce+gm+1/Ro+jw*Cce),(-1/Ro-jw*Cce),0},
+  23 : 		{(-1/Ru-jw*Cu+gm),(-gm-1/Ro-jw*Cce),(1/Ru+jw*Cu+1/Ro+jw*Cce+jw*Cc+1/Rc),(-jw*Cc)},
+  24 : 		{0,0,(-jw*Cc),(1/Rl+jw*Cc)}}
+  25 : 	b = {vs/(Rs+1/(jw*Cs)),0,0,0} -- Source terms -- Dimension of current
+  26 : 	gauss(gmat,b) -- Solutions for v's are returned in the b array 
+  27 : 	v4 = b[4]; v4m = Complex.abs(v4)
+  28 : 	sol[1][i] = f
+  29 : 	sol[2][i] = math.log10(f)
+  30 : 	sol[3][i] = v4m
+  31 : 	sol[4][i] = Complex.angle(-v4)*180/math.pi -180.
+  32 : 	sol[5][i] = 20*math.log10(v4m)
+  33 : 	f,jw = f*fact, jw*fact
+  34 : end
+  35 : print("time taken by gauss = ",os.clock()-t1)
+  36 : write_data('list4_11.dat', unpack(sol))
+  37 : plot(sol[2],sol[5]) -- Magnitude Bode plot
+  38 : plot(sol[2],sol[4]) -- Angle Bode plot
+  39 : 
+  40 : 

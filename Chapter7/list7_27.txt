@@ -1,0 +1,17 @@
+   1 : -- /* File list7_27.lua */ -- Some tests of elementary functions
+   2 : 
+   3 : require"elemfunc"
+   4 : gamma = elemfunc.gamma -- Gamma function
+   5 : prob = elemfunc.Pn -- Probability function
+   6 : J0 = elemfunc.J0 -- Bessel function
+   7 : i,xt,y1t,y2t,y3t = 1,{},{},{},{} -- Now test function
+   8 : for x=-5,5.0001,.01 do 
+   9 : 	xt[i] = x
+  10 : 	y1t[i] = gamma(x)
+  11 : 	y2t[i] = prob(x)
+  12 : 	y3t[i] = J0(x)
+  13 : 	i = i+1
+  14 : end	
+  15 : plot(xt,y1t,{'gamma plot','x','y','set yrange [-5:5]'})
+  16 : plot(xt,y2t); plot(xt,y3t)
+  17 : write_data("list7_27.dat",xt,y1t,y2t,y3t)

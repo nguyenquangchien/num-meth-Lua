@@ -1,0 +1,29 @@
+   1 : -- /* File list5_12.lua */ Test of integrals with infinite limit
+   2 : 
+   3 : require"intg"; makeglobal(math)
+   4 : --getfenv(intg).ERROR=1.e-8 -- Try commenting out
+   5 : 
+   6 : f1 = function(x) -- First test integral --> sqrt(pi)/2
+   7 : 	return exp(-x^2)
+   8 : end
+   9 : f2 = function(x) -- Second test integral --> pi
+  10 : 	return 2/(1+x^2)
+  11 : end
+  12 : f3 = function(x) -- Third test integral --> 2.0
+  13 : 		return x^2*exp(-x)
+  14 : end
+  15 : f4 = function(x) -- Fourth test integral --> -pi*ln(10)/20
+  16 : 	return log(x)/(1 + 100*x^2)
+  17 : end	
+  18 : f5 = function(x) -- Fifth test integral --> .0674467742
+  19 : 	return x^.2/(1 + 10*x)^2
+  20 : end	
+  21 : 
+  22 : a,b,c,d,e = sqrt(pi)/2,pi,2.0, -pi*log(10)/20, -10^(-6/5)*pi/(5*sin(6*pi/5))
+  23 : aa,ab,ac = intg_inf(f1), intg_inf(f2), intg_inf(f3)
+  24 : ad,ae = intg_inf(f4), intg_inf(f5)
+  25 : print('value of f1 = ',aa,(a-aa)/a)
+  26 : print('value of f2 = ',ab,(b-ab)/b)
+  27 : print('value of f3 = ',ac,(c-ac)/c)
+  28 : print('value of f4 = ',ad,(d-ad)/d)
+  29 : print('value of f5 = ',ae,(e-ae)/e)

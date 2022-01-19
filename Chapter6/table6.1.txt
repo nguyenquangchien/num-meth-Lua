@@ -1,0 +1,50 @@
+f1 -- case 1
+Average mean square errors for f1=funct are:
+Functions, LCB, CSP = 	0.0060014325170042	0.0013632720130226
+First derivatives, LCB, CSP = 	0.045632277387986	0.0094093992558126
+Second derivatives, LCB, CSP = 	0.50530529974356	0.091114022618159
+f1 -- case 2
+Average mean square errors for f1=funct are:
+Functions, LCB, CSP = 	0.005897066045263	0.0023582716050147
+First derivatives, LCB, CSP = 	0.037891484714865	0.016019855939816
+Second derivatives, LCB, CSP = 	0.26330242874461	0.13737873834443
+f2 -- case 1
+Average mean square errors for f2=funct are:
+Functions, LCB, CSP = 	0.0032234484150339	0.0053104070805394
+First derivatives, LCB, CSP = 	0.022750460174855	0.037161125019978
+Second derivatives, LCB, CSP = 	0.21214831598895	0.33376039104145
+f2 -- case 2
+Average mean square errors for f2=funct are:
+Functions, LCB, CSP = 	0.0012288142294386	0.0022595517082402
+First derivatives, LCB, CSP = 	0.0084588198292883	0.015912189500261
+Second derivatives, LCB, CSP = 	0.075125203238107	0.1460232609278
+f3 -- case 1
+Average mean square errors for f3=funct are:
+Functions, LCB, CSP = 	0.00980248970445	0.020729329429747
+First derivatives, LCB, CSP = 	0.14915843008369	0.2824169423923
+Second derivatives, LCB, CSP = 	4.2458750362208	5.2323334883357
+f3 -- case 2
+Average mean square errors for f3=funct are:
+Functions, LCB, CSP = 	0.013437504616225	0.02085651106357
+First derivatives, LCB, CSP = 	0.27716207095588	0.28386439125608
+Second derivatives, LCB, CSP = 	7.8772391797304	5.2404920739258
+f4 -- case 1
+Average mean square errors for funct=f4 are:
+Functions, LCB, CSP = 	0.0060055483719047	0.008656476371974
+First derivatives, LCB, CSP = 	0.043242393874871	0.062140474039191
+Second derivatives, LCB, CSP = 	0.43479547042791	0.60841592397116
+f4 -- case 2
+Average mean square errors for funct=f4 are:
+Functions, LCB, CSP = 	0.0034702496172969	0.0047624482956788
+First derivatives, LCB, CSP = 	0.025758577004278	0.03511895554092
+Second derivatives, LCB, CSP = 	0.2841059597763	0.37205720674853
+f5 -- case1
+Average mean square errors for funct=f5 are:
+Functions, LCB, CSP = 	0.0046523292544819	0.0027943762728762
+First derivatives, LCB, CSP = 	0.034904135398795	0.020740993926103
+Second derivatives, LCB, CSP = 	0.22208357410935	0.090301098396494
+f5 -- case 2
+Average mean square errors for funct=f5 are:
+Functions, LCB, CSP = 	0.0018071546564437	0.0035753786563359
+First derivatives, LCB, CSP = 	0.013284665249696	0.026856448985422
+Second derivatives, LCB, CSP = 	0.064706532363929	0.13162357558134

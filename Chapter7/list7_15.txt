@@ -1,0 +1,28 @@
+   1 : -- /* File list7_15.lua */ -- general data fitting with polynomial functions
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : xd,yd = {},{}
+   6 : read_data('PhDgrads.dat',xd,yd)
+   7 : --read_data('gauss3.dat',yd,xd) -- Another data set
+   8 : -- read_data('list7_1.dat,xd,yd) -- Yet another data set
+   9 : 
+  10 : polyft = function(x,c) -- Define general polynomial function to fit data
+  11 : 	local nc,xx,sum = #c, x[2], 0
+  12 : 	for i=nc,1,-1 do sum = sum*xx + c[i] end
+  13 : 	return sum - x[1]
+  14 : end
+  15 : 
+  16 : nc = 5 -- Specify number of polynomial coefficients
+  17 : c = {}; for i=1,nc do c[i] = 0 end -- zero initial guesses
+  18 : del,err,nmax = nlstsq({yd,xd},fw,polyft,c) -- Call fiting 
+  19 : print('RMS error =',err,'#Iter =',nmax) -- print results
+  20 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  21 : xcalc,ycalc = {},{}
+  22 : x1,x2,i = 0,60, 1; dx = (x2-x1)/100
+  23 : for x=x1,x2,dx do 
+  24 : 	xcalc[i],ycalc[i] = x, polyft({0,x},c)
+  25 : 	i = i+1
+  26 : end
+  27 : write_data('list7_15.dat',xcalc,ycalc,xd,yd)
+  28 : plot(xcalc,ycalc);plot(xd,yd)

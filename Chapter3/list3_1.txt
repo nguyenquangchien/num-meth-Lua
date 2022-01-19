@@ -1,0 +1,10 @@
+   1 : --/* File list3_1.lua Successive substitution code */
+   2 : 
+   3 : x1 = 0 -- Initial guess
+   4 : x2 = 0
+   5 : for i=1,40 do 
+   6 : 	x1 = ((3-2*x1+4*x1^2)/5)^.25
+   7 : 	x2 = -((3-2*x2+4*x2^2)/5)^.25
+   8 : 	print(i,x1,i,x2)
+   9 : end
+  10 : 

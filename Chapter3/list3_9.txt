@@ -1,0 +1,20 @@
+   1 : --/* File list3_9.lua */  -- Diode equation with iteration limits
+   2 : 
+   3 : require "newton"
+   4 :  
+   5 : Is,vt = 1.0e-14,0.026 -- Diode parameters
+   6 : R = 2.0e3 -- Resistance value
+   7 : 
+   8 : function f1(vd) return Is*R*(math.exp(vd/vt)-1) + vd - vs end
+   9 : 
+  10 : vs = 15 -- Positive source voltage
+  11 : print("Positive voltage solutions")
+  12 : print(newton(f1,0,-1))
+  13 : print(newton(f1,.4,2))
+  14 : print(newton(f1,.8,-1))
+  15 : 
+  16 : vs = -15 -- Negative voltage source
+  17 : print("Negative voltage solutions")
+  18 : print(newton(f1,0,-1))
+  19 : print(newton(f1,-1,2))
+  20 : print(newton(f1,.8,-2))

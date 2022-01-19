@@ -1,0 +1,51 @@
+   1 : -- /* File list11_4.lua */
+   2 : -- Shooting method for fourth order boundary value problem 
+   3 : require"odebv" -- Boundary value by shooting method solver
+   4 : 
+   5 : E,I,w,nx,xmax = 1.e7,500,100,1000,100 -- Independent variable parameters
+   6 : EI = E*I
+   7 : 
+   8 : f2 = function(eqs,x,u,up,upp) -- Two second-order Differntial equations
+   9 : 	eqs[1] = upp[1] - u[2] 
+  10 : 	if x>=40 and x<=60 then wx = w 
+  11 : 	else wx = 0.0 end
+  12 : 	eqs[2] = upp[2] - wx/EI
+  13 : end	
+  14 : fb2 = function(bv,uL,uR,upL,upR) -- Left, Right values and derivatives
+  15 : 	bv[1] = uL[1]; bv[2] = upL[1] -- Second-order, u[1](Left) = u'[1](Left) = 0
+  16 : 	bv[3] = uR[1]; bv[4] = upR[1] -- u[1](Right) = u'[1](Right) = 0
+  17 : end
+  18 : 
+  19 : f4 = function(eqs,x,u,up) -- Four first-order Differential equations
+  20 : 	eqs[1] = up[1] - u[2] 
+  21 : 	eqs[2] = up[2] - u[3]
+  22 : 	eqs[3] = up[3] - u[4]
+  23 : 	if x>=40 and x<=60 then wx = w 
+  24 : 	else wx = 0.0 end
+  25 : 	eqs[4] = up[4] - wx/EI
+  26 : end
+  27 : fb4 = function(bv,uL,uR) -- Left, Right values, no derivatives
+  28 : 	bv[1] = uL[1];  bv[2] = uR[1]  -- First-order, u[1](Left) = u[2](Left) = 0
+  29 : 	bv[3] = uL[2]; bv[4] = uR[2] -- u[1](Right) = u[2](Right) = 0
+  30 : end
+  31 : 
+  32 : s2 = odebvst({f2,fb2},{0,xmax,nx},{0,0},{0,0})
+  33 : s4 = odebvst({f4,fb4},{0,xmax,nx},{0,0,0,0})
+  34 : 
+  35 : plot(s2[1],s2[2]); plot(s4[1],s4[2])
+  36 : 
+  37 : nx,dmax = #s2[1], 0
+  38 : for i=1,nx do 
+  39 : 	x = math.abs(s2[2][i] - s4[2][i])
+  40 : 	if x>dmax then dmax = x end
+  41 : end
+  42 : print('maximum difference = ',dmax)
+  43 : print('maximum deflection =',s2[2][xmax/2])
+  44 : write_data("list11_4.dat",s2,s4)
+  45 : 
+  46 : 
+
+Output:
+maximum difference = 	4.9530692047828e-015
+maximum deflection =	5.5358907629767e-005
+

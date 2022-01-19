@@ -1,0 +1,50 @@
+   1 : -- File list13_21.lua --
+   2 : -- Example of BV problem for p-n junction by FE method
+   3 : require"pde2fe"; exp = math.exp
+   4 : 
+   5 : -- Material and device parameters
+   6 : q = 1.6e-19; eps = 11.9*8.854e-14; L = 0.4e-4
+   7 : vt = .026; ni = 1.45e10
+   8 : Na = 1e19; Nd = 1.e17-- Doping densities
+   9 : x1,y1,x2 = L/2, L/4, L*3/4; va = 0.0
+  10 : qdep = q/eps; vj = vt*math.log(Na*Nd/ni^2); no = ni^2/Na
+  11 : 
+  12 : nts = {readnts('list13_21',L)} -- Read spatial data
+  13 : nds = nts[1] -- nodes data
+  14 : npts,u = #nds, {} -- number of nodes
+  15 : for i=1,npts do -- set initial value & scale dimensions
+  16 : 	xt,yt = nds[i][1],nds[i][2]
+  17 : 	if xt>=0.5*L and yt<=0.25*L then u[i] = 0.0
+  18 : 	else u[i] = vj end -- Set initial potential values
+  19 : end
+  20 : 
+  21 : feqs = { -- Equation to be solved 
+  22 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn)
+  23 : 		if mtn==2 then Nnet = -Na else Nnet = Nd end
+  24 : 		p, n  = Na*exp(-u/vt), no*exp(u/vt)
+  25 : 		return uxx + uyy + qdep*(Nnet + p - n)
+  26 : 	end,
+  27 : 	function(nd,u,un,nbs,kb) -- Boundary values
+  28 : 		if nbs==3 then return u-vj -- Top voltage contact
+  29 : 		elseif nbs==2 then return u-va -- Bottom contact
+  30 : 		else return un end -- Else zero normal derivative
+  31 : 	end
+  32 : }	
+  33 : 	
+  34 : getfenv(pde2fe).nprint = 1
+  35 : SPM,COE,SOR = 1, 2, 3 -- 3 solution methods 
+  36 : 
+  37 : u,errm = pde2fe(feqs,nts,u,COE) -- Solve by FE method
+  38 : 
+  39 : x,y = {},{}; NT = 81 
+  40 : for i=1,NT do -- Define uniform x-y grid for plotting
+  41 : 	x[i] = (i-1)*L/(NT-1); y[i] = x[i]
+  42 : end
+  43 : ut = toxysol(u,x,y,nts[1],nts[2])
+  44 : pa,na = {},{} -- Calculate hole and electron densities
+  45 : for i=1,#ut[3] do
+  46 : 	ua = ut[3][i]
+  47 : 	pa[i] = math.log10(Na*exp(-ua/vt))
+  48 : 	na[i] = math.log10(no*exp(ua/vt))
+  49 : end
+  50 : splot(ut); write_data('list13_21.dat',ut,pa,na)

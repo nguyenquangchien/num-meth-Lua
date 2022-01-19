@@ -1,0 +1,18 @@
+   1 : -- /* File list7_21.lua */ -- Example of datafitn() function
+   2 : 
+   3 : require "DataFit"
+   4 : 
+   5 : xd,yd,xcalc,ycalc={},{},{},{}
+   6 : read_data('thurber.dat',yd,xd) -- Read data
+   7 : fxc = datafitn({yd,xd},1,5)
+   8 : nd = #xd
+   9 : for i=1,nd do ycalc[i] = fxc(xd[i]) end
+  10 : xx,yy = {},{}
+  11 : xmin,xmax,nx = xd[1],xd[nd],1000
+  12 : dx = (xmax-xmin)/nx
+  13 : for i=1,nx do 
+  14 : 	xx[i] = xmin+dx*(i-1)
+  15 : 	yy[i] = fxc(xx[i])
+  16 : end
+  17 : plot(xx,yy)
+  18 : write_data("list7_21.dat",xx,yy,xd,yd) -- Save data 

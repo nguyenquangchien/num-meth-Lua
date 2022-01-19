@@ -1,0 +1,26 @@
+   1 : -- /* File list12_3.lua */
+   2 : -- Programs to integrate diffusion equation in one spatial variable
+   3 : 
+   4 : require"pdeivbv"
+   5 : getfenv(odefd).nprint = 1; getfenv(pdeivbv).nprint = 1
+   6 : -- Model equations to be solved
+   7 : L,D,U0 = 1.0,1.0,1.0; u = {}
+   8 : 
+   9 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  10 : 	fu[1] = ut[1] - D*upp[1] -- Diffusion equation
+  11 : end
+  12 : efl = function(fu,u,up) -- Left boundary fixed at 1.0
+  13 : 	fu[1] = u[1] - U0
+  14 : end
+  15 : efr = function(fu,u,up) -- Right boundary, fixed at 0.0
+  16 : 	fu[1] = u[1] - 0.0  
+  17 : end
+  18 : 
+  19 : t1 = os.clock()
+  20 : x = {}; Nx = 400; tmax = 0.01
+  21 : for i=1,Nx+1 do x[i],u[i] = (i-1)*L/Nx, 0.0 end -- Set up x and u arrays
+  22 : 
+  23 : sol = pdeivbv({eq,efl,efr},{0,tmax,5,5},x,u)
+  24 : print("Time =",os.clock(0-t1))
+  25 : plot(sol[1],sol[2],sol[3],sol[#sol])
+  26 : write_data('list12_3.dat',sol)

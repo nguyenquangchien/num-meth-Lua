@@ -1,0 +1,26 @@
+   1 : -- File list5_6.lua -- Minimum problem using pderiv()
+   2 : 
+   3 : require"deriv"; require"nsolv"
+   4 : 
+   5 : xio = {1,2,-3,4,-5} -- minimum points
+   6 : fuv = function(x) -- Multi-variable function
+   7 : 	local fv = 0
+   8 : 	for i=1,#x do fv = fv + (x[i] - xio[i])^2 end
+   9 : 	return math.exp(fv)
+  10 : end
+  11 : 
+  12 : x = {0,0,0,0,0} -- Initial guess at minimum
+  13 : print('At initial guess')
+  14 : print('Partial 1 derivative =',pderiv(fuv,x,1)) -- Just check on partial derivatives
+  15 : print('Partial 3 derivative =',pderiv(fuv,x,3))
+  16 : 
+  17 : eqs = function(y,x) -- Equatuions to be solved
+  18 : 	for i=1,#x do 
+  19 : 		y[i] = pderiv(fuv,x,i) -- Force partial derivatives to zero
+  20 : 	end
+  21 : end
+  22 : 
+  23 : print(nsolv(eqs,x)) -- Now solve them
+  24 : print('Minimum occurs at')
+  25 : table.foreach(x,print) -- Print minimum point
+  26 : print('Minimum value =',fuv(x))

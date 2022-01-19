@@ -1,0 +1,389 @@
+   1 : -- /* File odeiv.lua */
+   2 : -- Programs to integrate first order differential equations
+   3 : require"nsolv"
+   4 : 
+   5 : odebiv = function(feqs,tvals,u,up)
+   6 : 	local j, neq, t, h, h2,hs,hx -- Local variables for function
+   7 : 	local sol, yn, jfirst = {}, {}, 0
+   8 : 	local nit,nitt = 0,0 -- Number of iterations
+   9 : 	local neq = #u
+  10 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+  11 : 	-- Function to calculate next time values using nsolv()
+  12 : 	local fnext = function(eqs,u) 
+  13 : 		for m=1,neq do
+  14 : 			up[m] = (u[m] - yn[m])/h2 -- h2 = h/2 for TP rule, h for BD
+  15 : 		end
+  16 : 		feqs(eqs,t,u,up) -- Now call user defined differential equations
+  17 : 	end
+  18 : 	-- Use input value for number of intervals or set at default value
+  19 : 	up = up or {}
+  20 : 	for m=1,neq+1 do -- Array to return solution values with t value first
+  21 : 		sol[m] = {}
+  22 : 		if m==1 then sol[m][1] = tmin
+  23 : 		else	sol[m][1] = u[m-1]  end
+  24 : 	end
+  25 : 	t = tmin -- Initial t value
+  26 : 	hs = (tmax - t)/ntval -- Equal increments in t used
+  27 : 	-- If initial derivative not specified, use BD for first 4 points
+  28 : 	if #up~=neq then -- up array not input
+  29 : 		for m=1,neq do up[m] = 0 end
+  30 : 		jfirst,h,h2,hx = 0,hs/4,hs/4,0 -- Set to BD parameters
+  31 : 	else jfirst,h,h2,hx = 4,hs,hs/2,hs/2 end -- Set to TP parameters
+  32 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+  33 : 		repeat -- Use backwards differencing with 4 sub intervals of size h/4
+  34 : 			jfirst = jfirst+1
+  35 : 			-- Set up yn array and get ready for next solution value
+  36 : 			for m=1,neq do
+  37 : 				yn[m] = u[m] + hx*up[m] -- hx = 0 or h/2
+  38 : 				u[m] = u[m] + h*up[m] -- Predicted value of u array
+  39 : 			end
+  40 : 			t = t + h -- Now increment t to next t value
+  41 : 			-- Calculate new u values at next time step, u returns new values
+  42 : 			nitt = nsolv(fnext,u) 
+  43 : 			if nitt>nit and k~=ntval then nit = nitt end -- Monitor maximun # of iterations
+  44 : 			-- New Derivative values, same function as in fnext
+  45 : 			for m=1,neq do up[m] = (u[m] - yn[m])/h2 end
+  46 : 		until jfirst>=4 -- End of first interval repeating using BD
+  47 : 		if k==1 then h,h2,hx = hs,hs/2,hs/2 end -- Set to TP parameters
+  48 : 		sol[1][k+1] = t -- Save calculated values
+  49 : 		for m=1,neq do sol[m+1][k+1] = u[m]	end
+  50 : 	end -- End of main loop on t, now return solution array
+  51 : 	return sol,nit -- Solution and maximim number of iterations
+  52 : end -- End of odeiv
+  53 : 
+  54 : --[[ /****************************************************************************
+  55 : 	odebiv solves a system of first order differential equations of the form:
+  56 : Fm(up,u,t) = 0. where m is the number of functions and equations to be solved.  The
+  57 : defining equations may consist of any nonlinear or linear combinations of the variables
+  58 : and derivatives and the functions may have mixed variables and derivatives.  On input, 
+  59 : feqs is the name of a function returning the zero valued functions, u is the initial values
+  60 : of the variables, up is the initial derivatives of the variables and tvals is an array of
+  61 : {tmin,tmax,ntval} specifying the range of time for the solution. On output, u and up
+  62 : the last values of variables and derivatives, so that the function can be called again and
+  63 : the solution will pick up where it left off if an increased time is specified. 
+  64 : *******************************************************************************/]]
+  65 : odeiv = function(feqs,tvals,u,up) -- Multi Time Step Solver
+  66 : 	local sa,upp,sb,tl,ns = {},{}
+  67 : 	local ntp,j,ni,nit
+  68 : 	local NMAX,ND = getfenv(nsolv).NMAX,10,0
+  69 : 	up,upp = up or {},{}
+  70 : 	if type(tvals)=='number' then tvals = {0,tvals,0} end
+  71 : 	j = #tvals
+  72 : 	if j==1 then tvals = {0,{tvals[1]},2*ND} end
+  73 : 	if j==2 then tvals[3] = 2*ND end
+  74 : 	if type(tvals[2])=='number' then tvals[2] = {tvals[2]} end
+  75 : 	ntp = #tvals[2]
+  76 : 	if type(tvals[3])=='table' then ns = tvals[3][1]
+  77 : 	else ns = tvals[3] end
+  78 : 	nit = 0
+  79 : 	for i=1,ntp do
+  80 : 		if i>1 then tl = tvals[2][i-1]
+  81 : 		else tl = tvals[1] end
+  82 : 		if type(tvals[3])=='table' then ns = tvals[3][i] or ns end
+  83 : 		sb,ni = odebiv(feqs,{tl,tvals[2][i],ns},u,up,upp)
+  84 : 		if ni==NMAX then 
+  85 : 			print("Error: Maximum number of iterations exceeded in nsolv")
+  86 : 			print("Results may not be accurate!")
+  87 : 			print(tl,tvals[2][i],ns)
+  88 : 		end
+  89 : 		if ni>nit then nit = ni end
+  90 : 		if i>1 then sa = atend(sa,sb)
+  91 : 		else sa = sb end
+  92 : 	end
+  93 : 	return sa,nit
+  94 : end
+  95 : 
+  96 : odeivqs = function(feqs,tvals,u,up) -- ODE Quick Scan function
+  97 : 	local NPTS,NPS = 20,2
+  98 : 	local ttvals,nl,nu,fact = {},10
+  99 : 	local nt,j = #tvals,1
+ 100 : 	if nt<2 then print('Error, must specify two times in obeivqs'); return end
+ 101 : 	NPTS = math.floor(((tvals[3] or NPTS)+1)/2)
+ 102 : 	nl = 10^(math.floor(math.log10(tvals[2][1])))
+ 103 : 	nu = 10^(math.ceil(math.log10(tvals[2][2])))*1.000001
+ 104 : 	fact = 10^(1/NPTS)
+ 105 : 	ttvals[1],ttvals[2],ttvals[3],nl = nl,{},NPS,nl*fact
+ 106 : 	while nl<= nu do ttvals[2][j],nl,j = nl,nl*fact,j+1 end
+ 107 : 	u,up = u or {},up or {} -- Linear steqs for first interval
+ 108 : 	odeiv(feqs,{tvals[1],ttvals[1],NPTS},u,up) -- NPTS points
+ 109 : 	return odeiv(feqs,ttvals,u,up)
+ 110 : end
+ 111 : 
+ 112 : odebrk = function(feqs,tvals,u,up,upp) -- Basic Runge-Kutta ODE integration code
+ 113 : 	local j, neq, t, h, h2 -- Local variables for function
+ 114 : 	local sol, m1,m2,m3,m4,u1 = {}, {}, {}, {}, {}, {}
+ 115 : 	local nit,nitt = 0,0 -- Number of iterations
+ 116 : 	local neq = #u -- Number of equations 
+ 117 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 118 : 	
+ 119 : 	fderiv = function(eqs,up) -- Function for calculating derivatives
+ 120 : 		feqs(eqs,t,u1,up)
+ 121 : 	end
+ 122 : 	-- Use input value for number of intervals or set at default value
+ 123 : 	if type(up)~='table' then up = {} end
+ 124 : 	for m=1,neq+1 do -- Array to return solution values with t value first
+ 125 : 		sol[m] = {}
+ 126 : 		if m==1 then sol[m][1] = tmin else	sol[m][1] = u[m-1]  end
+ 127 : 	end
+ 128 : 	t = tmin; hs = (tmax - t)/ntval -- Equal increments in t used
+ 129 : 	for m=1,neq do up[m] = 0 end
+ 130 : 	h,h2 = hs,hs/2 -- Set to RK parameters
+ 131 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 132 : 		for m=1,neq do u1[m] = u[m] end
+ 133 : 		nitt = nsolv(fderiv,up) -- Update up values
+ 134 : 		for m=1,neq do m1[m] = h*up[m]; u1[m] = u[m] + m1[m]/2 end
+ 135 : 		t = t+h2; nitt = nsolv(fderiv,up)+nitt -- next up value
+ 136 : 		for m=1,neq do m2[m] = h*up[m]; u1[m] = u[m] + m2[m]/2 end
+ 137 : 		nitt = nsolv(fderiv,up)+nitt -- next up value
+ 138 : 		for m=1,neq do m3[m] = h*up[m]; u1[m] = u[m] +m3[m] end
+ 139 : 		t = t+h2; nitt = nsolv(fderiv,up)+nitt -- next up value
+ 140 : 		for m=1,neq do m4[m] = h*up[m] end
+ 141 : 		for m=1,neq do u[m] = u[m] + (m1[m]+2*m2[m]+2*m3[m]+m4[m])/6 end
+ 142 : 		sol[1][k+1] = t -- Save calculated values
+ 143 : 		for m=1,neq do sol[m+1][k+1] = u[m] end
+ 144 : 		if nitt>nit then nit = nitt end -- Monitor maximun # of iterations
+ 145 : 		end -- End of main loop on t, now return solution array
+ 146 : 		return sol,nit/4 -- Solution and maximim number of iterations
+ 147 : end -- End of odebrk	
+ 148 : 
+ 149 : odeivs = function(feqs,tvals,u,up) -- Adaptive Step Size Solver
+ 150 : 	local ttvals,sa,upp,t,s1,s2 = {},{},{}
+ 151 : 	local k,ni,nit,err,fac,relerr,relmin,t1,t2,t3,h,h2,hmax,hmin,tmax
+ 152 : 	local NMAX,RELERR = getfenv(nsolv).NMAX,1.e-5 -- Parameters for TP algorithm below
+ 153 : 	local NTMIN,NTMAX,TFAC,HFAC,FAC,fe,fd,fff = 100,20000,1.e-6,1.e-12,0.8,0.5,1,1+1.e-12
+ 154 : 	if odebiv==odebrk then fe,fd = 0.25,0.2 end -- Set parameters for RK algorithm
+ 155 : 	neq = #u -- Number of solution variables
+ 156 : 	up = up or {} -- Below is for different tvals formats
+ 157 : 	if type(tvals)=='number' then tvals = {0,tvals} end
+ 158 : 	if #tvals==1 then tvals = {0,tvals[1]} end
+ 159 : 	if type(tvals[2])=='number' then tvals[2] = {tvals[2]} end
+ 160 : 	t,tmax = tvals[1],tvals[2][1]
+ 161 : 	hmin,hmax = tvals[2][2] or (tmax-t)*HFAC, tvals[2][3] or (tmax-t)/NTMIN 
+ 162 : 	relerr = tvals[3] or RELERR*neq; relmin = relerr/5
+ 163 : 	nit,k,h = 0,1,tmax*TFAC; h2 = h/2 -- Guess at initial step size
+ 164 : 	u1,u2,up1,up2,upp1,upp2 ={},{},{},{},{},{}
+ 165 : 	for i=1,neq+1 do sa[i] = {} end; sa[1][1] = t -- Set initial solution values
+ 166 : 	for i=1,neq do t1,t2 = u[i],up[i]; sa[i+1][1],u1[i],u2[i],up1[i],up2[i] = t1,t1,t1,t2,t2 end
+ 167 : 	while 1 do -- Major time step loop
+ 168 : 		while 1 do -- Adjust step size downward until local relative error condition met
+ 169 : 			ttvals[1],ttvals[2],ttvals[3] = t,t+h,1
+ 170 : 			s1 = odebiv(feqs,ttvals,u1,up1,upp1) -- One step solution
+ 171 : 			ttvals[3] = 2; s2,ni = odebiv(feqs,ttvals,u2,up2,upp2) -- Repeat using two steps
+ 172 : 			err = 0 -- Evaluate maximum relative error
+ 173 : 				for i=1,neq do
+ 174 : 				fac =  fd*math.abs(s1[i+1][2]-s2[i+1][3])/(math.abs(u[i]) + math.abs(u2[i]))
+ 175 : 				if fac>err then err = fac end
+ 176 : 			end
+ 177 : 			if err<relerr or math.abs(h)<math.abs(hmin) then break end -- Relative error met, or minimum step size met
+ 178 : 			fac = (relerr/err)^fe*FAC; h = h*fac; h2 = h/2 -- Adjust step size downward and try again 
+ 179 : 			for i=1,neq do t1,t2,t3 = u[i],up[i],upp[i]
+ 180 : 			u1[i],u2[i],up1[i],up2[i],upp1[i],upp2[i] = t1,t1,t2,t2,t3,t3 end -- Set to old values 
+ 181 : 		end -- loop back if relerr criteria not met
+ 182 : 		if ni==NMAX and err>relerr then -- Print warning message
+ 183 : 			print("Error at t =" ,t," : Maximum number of iterations exceeded in nsolv")
+ 184 : 			print("     Results are probably not accurate!")
+ 185 : 		end
+ 186 : 		if ni>nit then nit = ni end
+ 187 : 		for i=1,2 do -- Save valid solution values contained in s2 array -- 2 time points
+ 188 : 			k,t = k+1,t+h2; sa[1][k] = t; for j=2,neq+1 do sa[j][k] = s2[j][i+1] end 
+ 189 : 		end
+ 190 : 		if k>NTMAX then -- Limit solution to NTMAX data points (100,000 default)
+ 191 : 			print("Number of adaptive data points exceeds ",NTMAX)
+ 192 : 			print("     Best effort at solution returned!"); break
+ 193 : 		end
+ 194 : 		for i=1,neq do t1,t2,t3 = u2[i],up2[i],upp2[i]; u[i],u1[i],up[i],up1[i],upp[i],upp1[i] = t1,t1,t2,t2,t3,t3 end
+ 195 : 		if h>0 then if t>=tmax then break end -- Exit if finished, else reset parameters
+ 196 : 		elseif t<=tmax then break end -- Negative time step
+ 197 : 		if err<relmin then h = h*2 end -- Adjust step size upward by factor of 2
+ 198 : 		if math.abs(h)>math.abs(hmax) then h = hmax end 
+ 199 : 		if h>0 then if t+h+h>tmax then h = tmax*fff - t end
+ 200 : 		elseif t+h+h<tmax then h = tmax*fff - t end; h2 = h/2 -- Finalize h and h/2
+ 201 : 		
+ 202 : 	end -- loop back for next time step
+ 203 : 	return sa,nit
+ 204 : end
+ 205 : 
+ 206 : odeb12 = function(feqs,tvals,u,up,upp)
+ 207 : 	local j, neq, t, h, h2,h2sq,hs,hx,hy,hz -- Local variables for function
+ 208 : 	local sol,ynn,yn,jfirst = {},{},{},0
+ 209 : 	local nit,nitt = 0,0 -- Number of iterations
+ 210 : 	local neq = #u
+ 211 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 212 : 	-- Function to calculate next time values using nsolv()
+ 213 : 	local fnext = function(eqs,u) 
+ 214 : 		for m=1,neq do
+ 215 : 			up[m] = (u[m] - yn[m])/h2 -- h2 = h/2 for TP rule, h for BD
+ 216 : 			upp[m] = (u[m] - ynn[m])/h2sq -- h2sq = (h/2)^2 for TP, (h)^2 for BD
+ 217 : 		end
+ 218 : 		feqs(eqs,t,u,up,upp) -- Now call user defined differential equations
+ 219 : 	end
+ 220 : 	-- Use input value for number of intervals or set at default value
+ 221 : 	up,upp = up or {}, upp or {}
+ 222 : 	for m=1,neq+1 do -- Array to return solution values with t value first in array
+ 223 : 		sol[m] = {}
+ 224 : 		if m==1 then sol[m][1] = tmin else sol[m][1] = u[m-1]  end
+ 225 : 	end
+ 226 : 	t = tmin -- Initial t value
+ 227 : 	hs = (tmax - t)/ntval -- Equal increments in t used, no adjusting step size
+ 228 : 	-- If initial derivative not specified, use Backwards differencing for first 4 points
+ 229 : 	if #up~=neq then for m=1,neq do up[m] = up[m] or 0 end end -- Complete initial derivatives 
+ 230 : 	if #upp~=neq then for m=1,neq do upp[m] = 0 end
+ 231 : 		jfirst,h = 0,0.25*hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- Set to BD parameters
+ 232 : 	else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 233 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 234 : 		repeat -- Use backwards differencing for first interval with 4 sub intervals of size h/4
+ 235 : 			jfirst = jfirst+1
+ 236 : 			-- Set up yn, and ynn arrays and get ready to solve equations
+ 237 : 			for m=1,neq do
+ 238 : 				yn[m] = u[m] + hx*up[m] -- hx = 0 or h/2
+ 239 : 				ynn[m] = u[m] + hy*up[m] + hz*upp[m] -- hy=h, hz=0 or (h/2)^2
+ 240 : 				u[m] = u[m] + h*(up[m] + 0.5*h*upp[m]) -- Predicted value of u array
+ 241 : 			end
+ 242 : 			t = t + h -- Now increment t to next t value
+ 243 : 			-- Calculate new u values at next time step, new values are returned in u array
+ 244 : 			nitt = nsolv(fnext,u) 
+ 245 : 			if nitt>nit then nit = nitt end -- Monitor maximun number of iterations
+ 246 : 			-- New derivative values, same function as in fnext 
+ 247 : 			for m=1,neq do up[m],upp[m] = (u[m] - yn[m])/h2,(u[m] - ynn[m])/h2sq end
+ 248 : 		until jfirst>=4 -- End of first interval repeat using Backwards difference
+ 249 : 		if k==1 then h = hs; h2,h2sq,hy,hx,hz = h/2,h*h/4,h,h/2,h*h/4 end -- TP parms.
+ 250 : 		sol[1][k+1] = t; for m=1,neq do sol[m+1][k+1] = u[m]	end -- Save values
+ 251 : 	end -- End of main loop on t, now return solution array
+ 252 : 	return sol,nit -- Solution and maximim number of iterations
+ 253 : end -- End of odeb12
+ 254 : 
+ 255 : --[[ /****************************************************************************
+ 256 : 	odeb12() solves a system of second order differential equations of the form:
+ 257 : Fm(t,u,up,upp) = 0. where m is the number of functions and equations to be solved.  The
+ 258 : defining equations may consist of any nonlinear or linear combinations of the variables
+ 259 : and derivatives and the functions may have mixed variables and derivatives.  On input, 
+ 260 : feqs is the name of a function returning the zero valued functions, u is the initial values
+ 261 : of the variables, upp, and up are the initial derivatives of the variables and tvals is an array of
+ 262 : {tmin,tmax,ntval} specifying the range of time for the solution. On output, u, upp and up
+ 263 : are the last values of variables and derivatives, so that the function can be called again 
+ 264 : and the solution will pick up where it left off if an increased time is specified. 
+ 265 : *******************************************************************************/]]
+ 266 : 
+ 267 : odeerror = function(si1,si2) -- ODE error estimator for two solutions 
+ 268 : 	require"intp"
+ 269 : 	local err,ny,s1,s2 = {},#si1
+ 270 : 	local nd1,nd2 = #si1[1], #si2[1]
+ 271 : 	local fac = 3
+ 272 : 	if odebiv==odebrk then fac = 15 end
+ 273 : 	for i=1,ny do err[i] = {} end
+ 274 : 	if nd1>nd2 then s1,s2 = si1,si2 
+ 275 : 	else nd1,nd2,s1,s2 = nd2,nd1,si2,si1 end
+ 276 : 	if nd1~=(nd2-1)*2+1 then print('Error: Incorrect files input to odeerror, nd1,nd2 = ',
+ 277 : 		nd1,nd2) end
+ 278 : 	err[1] = s1[1] -- Set x values for arrays
+ 279 : 	for k=2,ny do for i=1,nd1 do
+ 280 : 			err[k][i] = (intp(s2[1],s2[k],s1[1][i]) - s1[k][i])/fac
+ 281 : 	end end
+ 282 : 	return err
+ 283 : end
+ 284 : errstat = function(yt) -- ODE error statistics
+ 285 : 	require"prob"
+ 286 : 	local nd = #yt
+ 287 : 	local ym,pm = 0,0
+ 288 : 	local mean,std = stats(yt)
+ 289 : 	for i=1,nd do
+ 290 : 		if math.abs(yt[i]) > ym then ym,pm = math.abs(yt[i]),i end
+ 291 : 	end
+ 292 : 	return std,ym,pm,mean
+ 293 : end
+ 294 : maxvalue = function(yt)
+ 295 : 	local nv,nd = #yt,#yt[1]
+ 296 : 	local mx,tmp = {}
+ 297 : 	for i=1,nv do
+ 298 : 		tmp = 0
+ 299 : 		for j=1,nd do
+ 300 : 			if math.abs(yt[i][j])>tmp then tmp=math.abs(yt[i][j]) end
+ 301 : 		end
+ 302 : 		mx[i] = tmp
+ 303 : 	end
+ 304 : 	return mx
+ 305 : end
+ 306 : odeivqse = function(feqs,tvals,u,up) -- ODE Quick Scan with error function
+ 307 : 	up = up or {}
+ 308 : 	local ul,ulp = {},up or {}
+ 309 : 	for i=1,#u do ul[i],ulp[i] = u[i],up[i] end
+ 310 : 	local s1,n1 = odeivqs(feqs,tvals,u,up)
+ 311 : 	local s2,n2 = odeivqs(feqs,{tvals[1],{tvals[2][1],tvals[2][2],tvals[2][3]/2},tvals[3]},ul,ulp)
+ 312 : 	return s1,odeerror(s1,s2),math.max(n1,n2)
+ 313 : end
+ 314 : odeive = function(feqs,tvals,u,up) -- ODE Multi-Step TP solver with error estimation
+ 315 : 	local nu,ul,ulp = #u,{}
+ 316 : 	local ttvals = {tvals[1],tvals[2],{}}
+ 317 : 	for i=1,nu do ul[i] = u[i] end
+ 318 : 	if up~=nil then ulp = {}; for i=1,nu do ulp[i] = up[i] end end
+ 319 : 	local s1,n1 = odeiv(feqs,tvals,u,up)
+ 320 : 	if type(tvals[3])=='number' then ttvals[3][1] = tvals[3]/2
+ 321 : 	else for i=1,#tvals[3] do ttvals[3][i] = tvals[3][i]/2 end end
+ 322 : 	local s2,n2 = odeiv(feqs,ttvals,ul,ulp)
+ 323 : 	return s1,odeerror(s1,s2),math.max(n1,n2)
+ 324 : end	
+ 325 : odeivse =  function(feqs,tvals,u,up) -- Adaptive Step Size Solver with error estimation
+ 326 : 	up = up or {}
+ 327 : 	local u1,up1,k = {},{},1
+ 328 : 	local ttvals = {tvals[1],{},1}
+ 329 : 	for i=1,#u do u1[i],up1[i] = u[i],up[i] end -- Save initial values
+ 330 : 	local s1,n1 = odeivs(feqs,tvals,u,up) -- Real solution at 2h step sizes
+ 331 : 	for i=3,#s1[1],2 do ttvals[2][k],k = s1[1][i],k+1 end
+ 332 : 	local s2,n2 = odeiv(feqs,ttvals,u1,up1) -- Comparison at h step sizes
+ 333 : 	return s1,odeerror(s1,s2),math.max(n1,n2) -- Return solution and errors
+ 334 : end
+ 335 : 	
+ 336 : atend = function(a,b)
+ 337 : 	local nc,m1,m2 = #a,#a[1],#b[1]
+ 338 : 	for i=1,nc do
+ 339 : 		for j=2,m2 do a[i][j-1+m1] = b[i][j] end
+ 340 : 	end
+ 341 : 	return a
+ 342 : end
+   1 : -- /* File list10_3.lua */
+   2 : -- Programs to explore stability and accuracy for first order differential equations
+   3 : 
+   4 : require"nsolv"; exp = math.exp
+   5 : typ = 'TP' -- Trapeziodal rule -- Sekect as desured
+   6 : --typ = 'BD' -- Backwards difference
+   7 : --typ = 'FD' -- Forward difference
+   8 : 
+   9 : feqs = function(eq, t, y, yp) -- Define differential equations
+  10 : 	eq[1] = yp[1] - y[2]
+  11 : 	eq[2] = yp[2] + y[1]
+  12 : end
+  13 : 
+  14 : h = .01
+  15 : kmax = 3000
+  16 : neq,t = 2,0
+  17 : 
+  18 : y = {}; sol = {{t},{1},{0},{2}} -- Solution array with Initial values
+  19 : for i=1,neq do y[i] = sol[i+1][1] end -- initial y value array
+  20 : 
+  21 : fderiv = function(eqs,yp) -- Function for calculating derivatives - yp
+  22 : 	feqs(eqs,t,y,yp) -- Add t and y to arguments
+  23 : end
+  24 : 
+  25 : fnext = function(eqs,y) -- Function for next y values
+  26 : 	local yp,h2 = {}
+  27 : 	if typ=='TP' then h2=h/2 else h2=h end
+  28 : 	for i=1,neq do -- TP or BD algorithms
+  29 : 		yp[i] = (y[i] - yn[i])/h2 -- trapezoidal rule
+  30 : 	end
+  31 : 	feqs(eqs,t,y,yp) -- Add t and yp to arguments
+  32 : end
+  33 : 
+  34 : yp,yn = {},{}; for i=1,neq do yp[i] = 0 end -- Derivative and step array 
+  35 : 
+  36 : for k=1,kmax do -- Main time loop
+  37 : 	nsolv(fderiv,yp) -- Update y' values
+  38 : 	if typ=='TP' then  for i=1,neq do yn[i] = y[i] + 0.5*h*yp[i] end  -- Trapezoidal rule
+  39 : 	else for i=1,neq do yn[i] = y[i] end end -- Backwards differencing
+  40 : 	for i=1,neq do y[i] = y[i] + h*yp[i] end --Predict new value, final for Forward diff
+  41 : 	t = t+h -- Update time 
+  42 : 	if typ~='FD' then nsolv(fnext,y) end -- Calculate new values
+  43 : 	sol[1][k+1] = t -- Save calculated time values
+  44 : 	for i=1,neq do sol[i+1][k+1] = y[i] end
+  45 : end
+  46 : for i=1,#sol[1] do sol[neq+2][i] = math.cos(-(i-1)*h) end
+  47 : write_data('list10_3'..typ..'.dat',sol); plot(sol)

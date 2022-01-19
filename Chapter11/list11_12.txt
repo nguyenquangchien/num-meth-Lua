@@ -1,0 +1,20 @@
+   1 : -- /* File list11_12.lua */
+   2 : -- Shooting method for fourth power potential well
+   3 : 
+   4 : require"odebv"
+   5 : 
+   6 : f = function(eqs,E,x,u,up,upp) -- Fourth order potential
+   7 : 	eqs[1] = upp[1] + (E[1] - x^4/10)*u[1]
+   8 : end
+   9 : 
+  10 : nx,xmax,Ei = 2400, 5.5,30 -- Typical parameters
+  11 : E = {Ei}
+  12 : s,err,Ex = odebveve({f,E},{-xmax,xmax,nx},{0},{1})
+  13 : sn,sp,fac = sqnorm(s,1.0)
+  14 : if fac>1.e-5 then -- Test for spatial interval increase
+  15 : 	print('Need to increase spatial interval')
+  16 : end
+  17 : 
+  18 : print(nx,xmax,Ex[1],E[1],nzeros(s))
+  19 : plot(sn); plot(sp)
+  20 : write_data('list11_12.dat',s,sn,sp,err)

@@ -1,0 +1,51 @@
+   1 : -- /* File list10_1.lua */
+   2 : -- Programs to explore stability and accuracy for first order differential equations
+   3 : 
+   4 : require"nsolv"; exp = math.exp
+   5 : typ = 'TP' -- Trapeziodal rule -- Select as desired
+   6 : --typ = 'BD' -- Backwards difference
+   7 : --typ = 'FD' -- Forward difference
+   8 : 
+   9 : feqs = function(eq, t, y, yp) -- Define differential equations
+  10 : 	eq[1] = yp[1] + y[1]
+  11 : 	eq[2] = yp[2] + 10*y[2]
+  12 : 	eq[3] = yp[3] +100*y[3]
+  13 : end
+  14 : 
+  15 : fac = 1-- Set h increment
+  16 : h,kmax = .01*fac, 40/fac; neq,t = 3,0
+  17 : 
+  18 : y = {}; sol = {{t},{1},{1},{1},{},{},{}} -- Solution array with Initial values
+  19 : for i=1,neq do y[i] = sol[i+1][1] end -- initial y value array
+  20 : 
+  21 : fderiv = function(eqs,yp) -- Function for calculating derivatives - yp
+  22 : 	feqs(eqs,t,y,yp) -- Add t and y to arguments
+  23 : end
+  24 : 
+  25 : fnext = function(eqs,y) -- Function for next y values
+  26 : 	local yp,h2 = {}
+  27 : 	if typ=='TP' then h2=h/2 else h2=h end
+  28 : 	for i=1,neq do -- TP or BD algorithms
+  29 : 		yp[i] = (y[i] - yn[i])/h2 -- trapezoidal rule
+  30 : 	end
+  31 : 	feqs(eqs,t,y,yp) -- Add t and yp to arguments
+  32 : end
+  33 : 
+  34 : yp,yn = {},{}; for i=1,neq do yp[i] = 0 end -- Derivative and step array 
+  35 : 
+  36 : for k=1,kmax do -- Main time loop
+  37 : 	nsolv(fderiv,yp) -- Update y' values
+  38 : 	if typ=='TP' then  for i=1,neq do yn[i] = y[i] + 0.5*h*yp[i] end  -- Trapezoidal rule
+  39 : 	else for i=1,neq do yn[i] = y[i] end end -- Backwards differencing
+  40 : 	for i=1,neq do y[i] = y[i] + h*yp[i] end --Predict new value, final for Forward diff
+  41 : 	t = t+h -- Update time 
+  42 : 	if typ~='FD' then nsolv(fnext,y) end -- Calculate new values
+  43 : 	sol[1][k+1] = t -- Save calculated time values
+  44 : 	for i=1,neq do sol[i+1][k+1] = y[i] end
+  45 : end
+  46 : for i=1,#sol[1] do 
+  47 : 	sol[neq+2][i] = exp(-(i-1)*h) 
+  48 : 	sol[neq+3][i] = exp(-(i-1)*h*10) 
+  49 : 	sol[neq+4][i] = exp(-(i-1)*h*100) 
+  50 : end
+  51 : write_data('list10_1'..typ..'.dat',sol); plot(sol)

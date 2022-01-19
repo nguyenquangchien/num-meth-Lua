@@ -1,0 +1,18 @@
+   1 : --/* File 3_3.lua Successive substitution example */
+   2 : 
+   3 : require"Complex"; require"ssroot"
+   4 : 
+   5 : function g2(x) -- Negative root function
+   6 : 	return -((3-2*x+4*x^2)/5)^.25
+   7 : end
+   8 : function g3(x) -- Complex root
+   9 : 	return j*((3-2*x+4*x^2)/5)^.25
+  10 : end
+  11 : function g4(x)
+  12 : 	return math.atan(1/x)
+  13 : end
+  14 : 
+  15 : print(ssroot(g2,0)) -- Real initial guess
+  16 : print(ssroot(g3,1)) -- Real initial guess
+  17 : print(ssroot(g4,1)) -- Real initial guess
+  18 : 

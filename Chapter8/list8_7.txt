@@ -1,0 +1,22 @@
+   1 : -- /* File list8_7.lua */
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : x,y = {},{}
+   6 : f = 1.e-3
+   7 : ds = 'm'
+   8 : read_data('paper.txt',y)
+   9 : nd = #y
+  10 : for i=1,nd do y[i] = f*y[i] end
+  11 : m,std = stats(y)
+  12 : print('mean,std = ',engr(m,ds),engr(std,ds))
+  13 : stderr = std/math.sqrt(nd-1)
+  14 :  
+  15 : pbv = {.6827,.9545,.9,.95,.99,.999}
+  16 : for i=1,#pbv do
+  17 : 	ts = ttable(nd-1,pbv[i])
+  18 : 	dm = ts*stderr
+  19 : 	print(engr((m-dm),ds)..' < mean <'..engr((m+dm),ds)..' at '..100*pbv[i]..' percent confidence level')
+  20 : end
+  21 : print(engr((m-stderr),ds)..' < mean <'..engr((m+stderr),ds).. ' for standard error bounds ')
+  22 : print(engr((m-2*stderr),ds)..' < mean <'..engr((m+2*stderr),ds).. ' for 2 standard error bounds ')

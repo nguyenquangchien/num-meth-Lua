@@ -1,0 +1,15 @@
+   1 : -- /* File list10_6.lua */
+   2 : -- Programs to integrate first order diff. equation using odebiv()
+   3 : 
+   4 : require"odeiv"
+   5 : 
+   6 : mu = 20
+   7 : feqs = function(eqs,t,y,yp) -- test of stiff differential eqns
+   8 : 	eqs[1] = yp[1] - y[2]
+   9 : 	eqs[2] = yp[2] - mu*(1 - y[1]^2)*y[2] + y[1]
+  10 : end
+  11 : 
+  12 : yin = {1,0} -- Initial values, 0 and 2
+  13 : sol,nit = odebiv(feqs,{0,100,16000},yin)
+  14 : print('Number of iterations =',nit); plot(sol[1],sol[2])
+  15 : write_data("list10_6.dat",sol)

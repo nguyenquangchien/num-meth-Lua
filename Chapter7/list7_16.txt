@@ -1,0 +1,35 @@
+   1 : -- /* File Data_Fit.lua */
+   2 : -- Program to fit data with noise to a smooth curve for plotting
+   3 : -- Number of knots specified by user or determined by program <= 10 floating knots
+   4 : require"nlstsq"; require"intp"
+   5 : local checkorder
+   6 : 
+   7 : datafit = function(yx,nc)
+   8 : 	local nd,c,xc = #yx[1] -- yx array contains {yd, xd}
+   9 : 	yx = checkorder(yx,nd) -- increasing x array values?
+  10 : 	local xmin,xmax = yx[2][1], yx[2][nd] -- x min and max values 
+  11 : 	local actv,dx,del = {}
+  12 : 	local fdf = function(yx,c)  -- Interpolation function for datafit()
+  13 : 		return intp(xc,c,yx[2])-yx[1] -- Interpolation function with set of knots
+  14 : 	end
+  15 : 	if type(nc)=='table' then -- arrays for xc and fixed knots?
+  16 : 		xc,c = nc[1] or {}, nc[2] or {} -- floating knots and c?
+  17 : 		nc = #xc -- All xc values must be passed
+  18 : 	else 
+  19 : 		if (nc==nil) or (nc==0) then -- Use default number of knots 
+  20 : 			nc = math.min(nd/10,15); nc = math.max(nc,3)
+  21 : 		end -- End result should be between 3 and 15
+  22 : 		nc,xc,c = math.ceil(nc), {}, {}
+  23 : 	end
+  24 : 	dx = (xmax-xmin)/(nc-1) -- Use equal spacing on x-axis for knots
+  25 : 	for i=1,nc do -- Set initial x and y values of floating knots
+  26 : 		 xc[i] = xc[i] or (xmin + (i-1)*dx) -- Take passed values or calculate 
+  27 : 		 if c[i] ~=nil then actv[i] = 0 else actv[i] = 1 end -- value or float?
+  28 : 		c[i] = c[i] or 0 -- linear problem, initial guesses can be zero
+  29 : 	end
+  30 : 	local nlenv = getfenv(nlstsq); local lcp,lyl = nlenv.nprint, nlenv.ylinear
+  31 : 	getfenv(nlstsq).nprint = 0; getfenv(nlstsq).ylinear = 1 -- Linear in y , no print
+  32 : 	del,err = nlstsq(yx, fw, fdf, c, actv) -- call data fit
+  33 : 	nlenv.nprint, nlenv.ylinear = lcp, lyl -- restore values in nlstsq
+  34 : 	return function(x,df) return intp(xc,c,x,df) end, {xc, c, del}, err -- f(x)
+  35 : end

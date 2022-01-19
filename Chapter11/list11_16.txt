@@ -1,0 +1,18 @@
+   1 : -- /* File list11_16.lua */
+   2 : -- Shooting method for boundary value problem with nonlinear DE
+   3 : require"odebvfd" -- Use ode1fd() function
+   4 : 
+   5 : nx,L,ubL,ubR = 1000, 1,0, 2 -- #points, Left, Right Boundary values
+   6 : 
+   7 : f = function(x,u,up,upp) -- Differntial equation
+   8 : 	return upp + 4*up^2
+   9 : end	
+  10 : -- x range values, boundary values specified
+  11 : x,u = {0,L,nx},{ubL,ubR}
+  12 : u,nn,err1,err2 = ode1fd(f,x,u) -- Solve BV problem
+  13 : 
+  14 : print(nn,err1,err2); plot(u) 
+  15 : C2,uex = math.exp(8),{} -- Exact solution parameters
+  16 : for i=1,nx do uex[i] = math.abs(0.25*math.log(u[1][i]*(C2-1)+1) - u[2][i]) end
+  17 : write_data("list11_16.dat",u,uex)
+  18 : 

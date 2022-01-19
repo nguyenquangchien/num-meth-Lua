@@ -1,0 +1,44 @@
+   1 : -- /* File list7_23.lua */
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : fft = function(yx,c)
+   6 : 	x = yx[2]
+   7 : 	return (c[1]+ c[2]*x+c[3]*x^2+c[4]*x^3)/(1+c[5]*x+c[6]*x^2+c[7]*x^3) - yx[1]
+   8 : end
+   9 : 
+  10 : xd,yd={},{}
+  11 : nd = read_data('thurber.dat',yd,xd) -- Read data
+  12 : c = {0,0,0,0,0,0,0}
+  13 : nc = #c
+  14 : actv,step = {},{}
+  15 : for i=1,nc do actv[i],step[i] = 1,0 end
+  16 : actv[5],actv[6],actv[7] = 0,0,0
+  17 : yx = {yd,xd} -- Data values
+  18 : 
+  19 : del,err,nmax = nlstsq(yx,fw,fft,c,actv,step) -- Call fiting - step 1
+  20 : print(err,nmax) -- print results
+  21 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  22 : c[5],actv[5],step[5] = .3,1,1.2 -- Include c[5]
+  23 : del,err,nmax = nlstsq(yx,fw,fft,c,actv,step) -- Call fiting - step 2
+  24 : print(err,nmax) -- print results
+  25 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  26 : c[6],actv[6],step[6] = .1,1,1.2 --Include c[6]
+  27 : del,err,nmax = nlstsq(yx,fw,fft,c,actv,step) -- Call fiting - step 3
+  28 : print(err,nmax) -- print results
+  29 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  30 : c[7],actv[7],step[7] = .03,1,1.2 -- Include c[7]
+  31 : del,err,nmax = nlstsq(yx,fw,fft,c,actv,step) -- Call fiting - step 4
+  32 : print(err,nmax) -- print results
+  33 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  34 : xmin,xmax,nx = xd[1],xd[nd],1000
+  35 : dx = (xmax-xmin)/nx
+  36 : xx,yy={},{}
+  37 : for i=1,nx do 
+  38 : 	xx[i] = xmin+dx*(i-1)
+  39 : 	yy[i] = fft({0,xx[i]},c)
+  40 : end
+  41 : plot(xx,yy)
+  42 : write_data("list7_23.dat",xx,yy) -- Save data 
+  43 : 
+  44 : 

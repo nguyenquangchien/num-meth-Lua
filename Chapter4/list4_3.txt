@@ -1,0 +1,18 @@
+   1 : --/* File list4_5.lua */
+   2 : 
+   3 : require"gauss"; require"spgauss"
+   4 : -- Example of use with gauss()
+   5 : A = {
+   6 : 	{10, -7, 0},
+   7 :  	{-3, 2, 6},
+   8 :  	{5, -1, 5}
+   9 : }
+  10 : B = {7, 4, 6}
+  11 : gauss(A,B) -- or gauss(A,B,3)
+  12 : table.foreach(B,print)
+  13 : -- Example of use with spgauss()
+  14 : A = {{10, -7, 0},{-3, 2, 6},{5, -1, 5}} -- Compact form
+  15 : B = {7, 4, 6}
+  16 : sol = spgauss(A,B) -- Optional form of call
+  17 : table.foreach(sol,print)
+  18 : 

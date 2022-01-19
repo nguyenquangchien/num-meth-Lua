@@ -1,0 +1,40 @@
+   1 : -- /* File list4_10.lua -- amplifier */
+   2 : -- Programs to solve for the frequency response of a single stage amplifier
+   3 : 
+   4 : require"Complex"; require"nsolv" -- load complex,nsolv support
+   5 : getfenv(nsolv).linear=1 -- Linear equations only need one iteration
+   6 : -- Circuit Parameters
+   7 : Rs,Rp,Re,Ru,Ro,Rc,Rl = 100, 20000, 200, 200000, 100000, 4000, 10000
+   8 : Cs,Ce,Cc,Cp,Cu,Cce = 1.e-6, 10e-6, 2.e-6, 5.e-12, 1.e-12, 1.5e-12
+   9 : gm = .01; vs = 1
+  10 : -- Frequency factors
+  11 : fact = 10^0.1-- 10 Points per decade in frequency
+  12 : f = 1.0 -- Begin at frequency of 1Hz
+  13 : jw = j*2*math.pi*f -- note jw is a variable name
+  14 : 
+  15 : eqs = function(y,v) -- Form of Node#1, Node#1, -- = Y[i] => Forced to be zero at solution values
+  16 : 	y[1] = (v[1]-vs)/(Rs+1/(jw*Cs)) + (v[1]-v[2])*(1/Rp+jw*Cp) + (v[1]-v[3])*(1/Ru+jw*Cu)
+  17 : 	y[2] = (v[2]-v[1])*(1/Rp+jw*Cp) + v[2]*(1/Re+jw*Ce) - gm*(v[1]-v[2]) + (v[2]-v[3])*(1/Ro+jw*Cce)
+  18 : 	y[3] = (v[3]-v[1])*(1/Ru+jw*Cu) + gm*(v[1]-v[2]) + (v[3]-v[2])*(1/Ro+jw*Cce) + (v[3]-v[4])*jw*Cc + v[3]/Rc
+  19 : 	y[4] = (v[4]-v[3])*jw*Cc + v[4]/Rl
+  20 : end
+  21 : 
+  22 : sol = {{},{},{},{},{}} -- Table of 5 empty tables, filled later
+  23 : local t1=os.clock() -- To check execution speed
+  24 : nmax = 91; v = {0,0,0,0} -- initial guesses -- values not critical
+  25 : for i=1,nmax do
+  26 : 	nsolv(eqs,v)
+  27 : 	v4 = v[4]; v4m = Complex.abs(v4)
+  28 : 	sol[1][i] = f
+  29 : 	sol[2][i] = math.log10(f)
+  30 : 	sol[3][i] = v4m
+  31 : 	sol[4][i] = Complex.angle(-v4)*180/math.pi - 180.
+  32 : 	sol[5][i] = 20*math.log10(v4m)
+  33 : 	f,jw = f*fact, jw*fact
+  34 : end
+  35 : print("time taken by nsolv = ",os.clock()-t1) -- Print time taken
+  36 : write_data('list4_10.dat', unpack(sol)) -- Same as sol[1],sol[2],sol[3],sol[4]
+  37 : plot(sol[2],sol[5]) -- Magnitude Bode plot
+  38 : plot(sol[2],sol[4]) -- Angle Bode plot
+  39 : 
+  40 : 

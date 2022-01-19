@@ -1,0 +1,7 @@
+   1 : -- /* File prob.lua */ -- Some basic probability and statistical functions
+-------
+ 320 : ran0 = function() -- Very simple random number generator
+ 321 : 	jran = mod(jran*ia+ic,im)
+ 322 : 	return jran/im
+ 323 : end
+ 324 : setfenv(ran0,{jran=885937,im=1771875,ia=2416,ic=374441,mod=math.fmod})

@@ -1,0 +1,45 @@
+   1 : -- File list12_23.lua --
+   2 : -- Example of BV problem in 2 dimensions -- rectangular grid of points
+   3 : 
+   4 : require"pde2bv"
+   5 : Vm = 1.0 -- Define equations to be solved
+   6 : feq = function(x,y,uxx,ux,u,uy,uyy,i,j)
+   7 : 	return uxx + uyy
+   8 : end
+   9 : fb = function(x,u,uy,ux,i) return u end
+  10 : ft = function(x,u,uy,ux,i) return u - Vm  end
+  11 : fr = function(y,u,ux,uy,j) return ux end
+  12 : fl = function(y,u,ux,uy,j) return ux end
+  13 : 
+  14 : x,y,u = {},{},{}; xmax,ymax = 1.0,1.0
+  15 : Nx,Ny = 50,50
+  16 : nx,ny = Nx+1,Ny+1
+  17 : for i=1,nx do x[i] = xmax*(i-1)/Nx end
+  18 : for i = 1,ny do y[i] = ymax*(i-1)/Ny end
+  19 : for j = 1,ny do	-- Set zero initial values
+  20 : 	u[j] = {}
+  21 : 	for i = 1,nx do u[j][i] = 0 end
+  22 : end
+  23 : 
+  24 : a,b = setup2bveqs({feq,fb,ft,fl,fr},x,y,u) -- get matrix equations
+  25 : 
+  26 : ua = {}
+  27 : for j=1,ny do -- convert u to single array
+  28 : 	for i=1,nx do ua[i+(j-1)*nx] = u[j][i] end
+  29 : end	
+  30 : function sdloop(a,b,ua,itt) -- Iterative loop 
+  31 : 	local jpold = 1
+  32 : 	for k=1,itt do 
+  33 : 		ua,merr = sdsolve(a,b,ua) -- Single step
+  34 : 		jprint = math.floor(k/10)
+  35 : 		if jprint==jpold then
+  36 : 			jpold=jprint+1
+  37 : 			print("Completed iteration",k,"with correction",merr);io.flush() 
+  38 : 		end
+  39 : 	end
+  40 : 	return ua
+  41 : end	
+  42 : 
+  43 : ua = sdloop(a,b,ua,200)
+  44 : bb = to2darray(ua,nx,ny)
+  45 : write_data('list12_23.dat',bb)

@@ -1,0 +1,18 @@
+   1 : -- /* File Polynomial.lua */
+   2 : -- Polynomial Class and associated functions
+   3 : 
+ 138 : function Polynomial.div(p1,p2)
+ 139 : 	n,m = #p1,#p2
+ 140 : 	while p1[n]==0.0 do p1[n],n = nil,n-1 end -- Zeros for highest powers?
+ 141 : 	while p2[m]==0.0 do p2[m],m = nil,m-1 end
+ 142 : 	if m>n then return Polynomial.new{0}, p1 end 
+ 143 : 	local a,b = {}, {}; fac =  p2[m]
+ 144 : 	for i=1,n do a[i] = p1[i]/fac end; for i=1,m do b[i] = p2[i]/fac end
+ 145 : 	for i=n,m,-1 do 
+ 146 : 		for j=1,m-1 do a[i-j] = a[i-j] - a[i]*b[m-j] end
+ 147 : 	end
+ 148 : 	for i=1,m-1 do b[i] = a[i]*fac end; b[m] = nil 
+ 149 : 	for j=1,n do if j>n-m+1 then a[j] = nil else a[j] = a[j+m-1] end end
+ 150 : 	while b[m-1]==0.0 do b[m-1],m = nil,m-1 end
+ 151 : 	return setmetatable(a,Polynomial_mt),setmetatable(b,Polynomial_mt)
+ 152 : end

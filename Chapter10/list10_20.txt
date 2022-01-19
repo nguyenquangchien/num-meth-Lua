@@ -1,0 +1,24 @@
+   1 : ---[[ /* File list10_20.lua */
+   2 : -- Programs to integrate first or second order differential equations
+   3 : require"odeiv"
+   4 : odebiv = odeb12 -- Substitute 2nd order solver
+   5 : -- mu = 20 Try different values
+   6 : mu = 0 -- Gives pure sinusoidal solutions
+   7 : -- Example of second order formulation
+   8 : f1 = function(eqs,x,y,yp,ypp) -- Van der Pol equation 
+   9 : 	eqs[1] = ypp[1] -mu*(1-y[1]^2)*yp[1] + y[1]
+  10 : end
+  11 : -- Example of equivalent first order formulation
+  12 : f2 = function(eqs,t,y,yp)
+  13 : 	eqs[1] = yp[1] - y[2]
+  14 : 	eqs[2] = yp[2] - mu*(1 - y[1]^2)*y[2] + y[1]
+  15 : end
+  16 : t1 = os.clock()
+  17 : s1,err1 = odeive(f1,{0,100,8000},{1},{0})
+  18 : print('first time =',os.clock()-t1); plot(s1)
+  19 : t1 = os.clock()
+  20 : s2,err2 = odeive(f2,{0,100,8000},{1,0})
+  21 : print('second time =',os.clock()-t1); plot(s2[1],s2[2])
+  22 : 
+  23 : write_data("list10_20,dat",s1,s2,err1,err2)
+  24 : 

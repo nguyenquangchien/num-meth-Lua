@@ -1,0 +1,18 @@
+   1 : --/* File list7_5.lua */ Fourier analysis of sunspot activity
+   2 : 
+   3 : require"Fourier"
+   4 : 
+   5 : jk,yyd,ssd = {},{},{}
+   6 : read_data('monthssn.dat',jk,yyd,ssd) -- read data
+   7 : nmths = #yyd -- Number of months
+   8 : plot(yyd,ssd) -- Look at data
+   9 : fx,fy,fz = fourier(ssd,100) -- Get Fourier components
+  10 : freq,fmag = {},{} -- Tables of magnitude and angle
+  11 : for i=1,#fx do 
+  12 : 	freq[i] = nmths/(12*i) -- Convert from harmonic nnbr to frequency
+  13 : 	fmag[i] = fx[i][1]
+  14 : end
+  15 : 
+  16 : plotFourier(fx) -- View Fourier components
+  17 : plot(iFourier(fx)); plot(freq,fmag)
+  18 : write_data('list7_5.dat',freq,fmag) -- Save analysis

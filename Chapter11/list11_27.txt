@@ -1,0 +1,13 @@
+   1 : -- /* File list11_27.lua */ -- Solution of semiconductor device equations
+------
+   4 : getfenv(odefd).umin = {1.e-6, 1.e-6, 1.e-6}
+   5 : getfenv(odefd).nprint = 1 -- Added statement
+   6 : 
+------
+  10 : Na = 1e16; Nd = 1.e19 -- Doping densities
+  11 : tno = 1.e-8; tpo = 2.e-8 -- Lifetimes -- Changed statement
+  12 : n1 = ni; p1 = ni
+------
+  46 : 	write_data('list11_27'..i..'.dat',s) -- Save solution
+  47 : 	if i>0 then x,v = xad(x,v) end -- Added statement
+  48 : end

@@ -1,0 +1,60 @@
+   1 : -- /* File Polynomial.lua */
+   2 : -- Polynomial Class and associated functions
+ 153 : function Polynomial.roots(p) -- Solves for roots of polynomial p
+ 154 : 	if type(p)=='PolyR' then -- Ratios of polynomials
+ 155 : 		return {Polynomial.roots(p[1]),Polynomial.roots(p[2])} end
+ 156 : 	local NMAX = getfenv(nsolv).NMAX -- Maximum number of iterations in nsolv
+ 157 : 	local roots,pr = {}, {} -- Collect roots, local copy of p
+ 158 : 	local n, m, f1, pol = #p, 1
+ 159 : 	local CMP,REL,typ,nmx,iroot = -1,1,1,1,0
+ 160 : 	while p[n]==0 and n>2 do n=n-1 end -- Check for zero's at end
+ 161 : 	while p[nmx]==0 and nmx<n-2 do -- Check for zeros at beginning
+ 162 : 		iroot = iroot+1
+ 163 : 		roots[iroot], nmx = 0, nmx+1 -- Zero roots
+ 164 : 	end
+ 165 : 	for i=nmx,n do pr[m],m = p[n-m+1],m+1 end -- Revese polynomial
+ 166 : 	n = n-nmx+1
+ 167 : 	
+ 168 : 	local function Pfactor(p1,c1,c2)
+ 169 : 		local pr = {} -- leave p1 unchanged
+ 170 : 		pr[1],pr[2] = p1[1], p1[2]-c1*p1[1]
+ 171 : 		for i=3,n-1 do pr[i]=p1[i]-c1*pr[i-1] - c2*pr[i-2] end
+ 172 : 		pr[n] = (p1[n] - c2*pr[n-2])
+ 173 : 		return pr -- residuals in n-1 and n terms
+ 174 : 	end
+ 175 : 	local function eqs(y,c) -- Define function to force to zero
+ 176 : 		if typ==REL then pol = Pfactor(pr, c[1]+c[2],c[1]*c[2]) -- Real pair
+ 177 : 		else pol = Pfactor(pr, 2*c[1],c[1]^2+c[2]^2) end  -- Complex pair
+ 178 : 		y[1],y[2] = pol[n-1], pol[n] -- Force remainder to zero
+ 179 : 	end
+ 180 : 	
+ 181 : 	while n>3 do -- solve for quadtatic factors
+ 182 : 		c = {c0[1],c0[2]}; nmx = nsolv(eqs,c)
+ 183 : 		if nmx==NMAX then 
+ 184 : 			typ,c = -typ, {c0[1],c0[2]}
+ 185 : 			nmx = nsolv(eqs,c) -- Try again, Reverse real & complex
+ 186 : 			if nmx==NMAX then -- Didn't succeed at finding root pair
+ 187 : 				print('Iterations exceed NMAX of ',NMAX, ' in poly_root')
+ 188 : 				print('At root number', iroot+1)
+ 189 : 				print('Try using "getfenv(nsolv).NMAX = ',2*NMAX,'"')
+ 190 : 			end
+ 191 : 		end
+ 192 : 		if typ==REL then pr = Pfactor(pr, c[1]+c[2],c[1]*c[2]) -- Real pair
+ 193 : 		else pr = Pfactor(pr,2*c[1],c[1]^2+c[2]^2) end  -- Complex pair
+ 194 : 		n,iroot = n-2, iroot+1
+ 195 : 		if typ==CMP then roots[iroot],roots[iroot+1] = -c[1]+j*c[2], -c[1]-j*c[2]
+ 196 : 		else roots[iroot],roots[iroot+1] = -c[1], -c[2] end
+ 197 : 		iroot = iroot+1; pr[n+2], pr[n+1] = nil, nil -- Reduce order of polynomial by 2
+ 198 : 	end
+ 199 : 	iroot = iroot + 1 -- Final roots from either quadratic factor or linear factor
+ 200 : 	if n>2 then -- Quadratic factor left
+ 201 : 		f1 = pr[2]^2 - 4*pr[1]*pr[3]
+ 202 : 		if f1>=0 then f1=sqrt(f1) else f1 = j*sqrt(-f1) end
+ 203 : 		if pr[2]>0 then f1 = -0.5*(pr[2] + f1) else f1 = -0.5*(pr[2] - f1) end
+ 204 : 		roots[iroot] = f1/pr[1]
+ 205 : 		iroot = iroot + 1; roots[iroot] = pr[3]/f1
+ 206 : 	else roots[iroot] = -pr[2]/pr[1]  end -- Linear factor left
+ 207 : 	return roots
+ 208 : end	
+ 209 : setfenv(Polynomial.roots,{sqrt=math.sqrt,nsolv=nsolv,j=Complex.j,getfenv=getfenv,table=table,
+ 210 : 	Polynomial=Polynomial,print=print,type=type,c0={1,-1}})

@@ -1,0 +1,132 @@
+   1 : -- File pde2fe.lua -- Functions for 2D finite element analysis
+   2 : 
+   3 : require"gauss"; require"spgauss"; require'pde2bv'
+   4 : local NHF=13; local calcsh, deriv1tri, deriv2tri, ltoxy
+   5 : local usave,utsave
+   6 : setup2feeqs = function(eqs,nts,u) -- Set up 2D equations for finite elements
+   7 : 	-- u is of form u[k], nts = {nodes[], elements[], sides[]} nodes, elements and sides
+   8 : 	local u,bxext,byext = u or {}, 0.0, 0.0
+   9 : 	local uxx,ux,uy,uyy,uxa,uya,ut
+  10 : 	local nds,tri,sds = nts[1], nts[2], nts[3]
+  11 : 	local nnds,nel,nsds = #nds, #tri, #sds
+  12 : 	local fctuxx,fctux,fctu,fctuy,fctuyy = 1.0,FACT,FACT,FACT,1.0
+  13 : 	local a, b = Spmat.new(nnds,-nnds), Spmat.new(nnds,-nnds)
+  14 : 	local fv,fx,fu,fy,xi,yi,ui,xn,yn,mk = {},{},{},{},{},{},{},{},{},{}
+  15 : 	local fxx,fyy,mxx,vx,vy,he,trik,n1,n2,n3,m1
+  16 : 	local lipts = {{1/3,1/3,1/3},{.6,.2,.2},{.2,.6,.2},{.2,.2,.6}} -- Four point integration
+  17 : 	local lkpts = {{1/3,.6,.2,.2},{1/3,.2,.6,.2},{1/3,.2,.2,.6}} -- k=l1,l1,l3 at four points
+  18 : 	local fipts = {-27/48,25/48,25/48,25/48} -- Factors for integratopn points
+  19 : 	if #u~=nnds then -- Make sure u is a proper table
+  20 : 		local uxl = {}; for k=1,nnds do uxl[k] = 0.0 end; u = uxl 
+  21 : 	end
+  22 : 	mxx = calcsh(tri,nds); vx = sqrt(1/mxx) 
+  23 : 	mxx,vy = 0.0, vx -- Find maximum solution value
+  24 : 	for k=1,nnds do mxx = max(mxx, abs(u[k])) end
+  25 : 	if mxx~=0.0 then -- Scale probe factors to maximum solution value
+  26 : 		fctu = FACT*mxx
+  27 : 		fctux,fctuy = fctu*vx, fctu*vy
+  28 : 	end
+  29 : 	uxa,uya = deriv1tri(tri,nds,u) -- Get first derivative arrays
+  30 : 	eq,eqb = eqs[1], eqs[2] -- Differential, boundary equations
+  31 : 	for k=1,nnds do a[k],b[k] = {}, 0 end
+  32 : 	for k=1,nel do --Loop over triangles
+  33 : 		trik = tri[k] -- one by one
+  34 : 		n1,n2,n3,m1 = trik[1], trik[2], trik[3], trik[12]
+  35 : 		ui[1],ui[2],ui[3] = u[n1], u[n2], u[n3] -- Three node solutions
+  36 : 		xi[1],xi[2],xi[3] = nds[n1][1], nds[n2][1], nds[n3][1] -- arrays of x,y values
+  37 : 		yi[1],yi[2],yi[3] = nds[n1][2], nds[n2][2], nds[n3][2]
+  38 : 		ns = {n1,n2,n3}
+  39 : 		ux,uy,uxx,uyy = uxa[k],uya[k],0.0,0.0 -- Local derivatives
+  40 : 		he = trik[NHF] -- shape factors for triangle
+  41 : 		area,fxx,fyy = he[0], 0.0, 0.0 -- area factor
+  42 : 		bxext,byext = 0.0,0.0
+  43 : 		if truefd then -- extra first derivative terms from da/dx and da/dy -- d(a du/dx)/dx form 
+  44 : 			for j=1,3 do -- loop over three triangle nodes
+  45 : 				xt,yt,ut = xi[j],yi[j],ui[j]
+  46 : 				lpts = {0,0,0}; lpts[j] = 1
+  47 : 				fvv = eq(xt,yt,uxx,ux,ut,uy,uyy,k,m1,ns,lpts)
+  48 : 				bxext=bxext-he[j][2]*(eq(xt,yt,uxx+fctuxx,ux,ut,uy,uyy,k,m1,ns,lpts)-fvv)/fctuxx
+  49 : 				byext=byext-he[j][3]*(eq(xt,yt,uxx,ux,ut,uy,uyy+fctuyy,k,m1,ns,lpts)-fvv)/fctuyy
+  50 : 			end -- Now have da/dx and da/dy over triangle -- approximated as constant
+  51 : 		end 
+  52 : 		for j=1,4 do -- loop over 4 integration points
+  53 : 			lpts,fwt = lipts[j], fipts[j]; l1,l2,l3 = lpts[1], lpts[2], lpts[3]
+  54 : 			ut = ui[1]*l1 + ui[2]*l2 + ui[3]*l3 -- Values at integration points
+  55 : 			xt,yt = xi[1]*l1 + xi[2]*l2 + xi[3]*l3, yi[1]*l1 + yi[2]*l2 + yi[3]*l3
+  56 : 			fvv = eq(xt,yt,uxx,ux,ut,uy,uyy,k,m1,ns,lpts) -- Get partial derivatives
+  57 : 			fxx = fxx - fwt*(eq(xt,yt,uxx+fctuxx,ux,ut,uy,uyy,k,m1,ns,lpts)-fvv)/fctuxx -- Sum ax
+  58 : 			fx[j] = fwt*((eq(xt,yt,uxx,ux+fctux,ut,uy,uyy,k,m1,ns,lpts)-fvv)/fctux+bxext) -- bx terms
+  59 : 			fu[j] = fwt*(eq(xt,yt,uxx,ux,ut+fctu,uy,uyy,k,m1,ns,lpts)-fvv)/fctu -- c terms
+  60 : 			fy[j] = fwt*((eq(xt,yt,uxx,ux,ut,uy+fctuy,uyy,k,m1,ns,lpts)-fvv)/fctuy+byext) -- by terns
+  61 : 			fyy = fyy - fwt*(eq(xt,yt,uxx,ux,ut,uy,uyy+fctuyy,k,m1,ns,lpts)-fvv)/fctuyy -- Sum ay terms
+  62 : 			fv[j] = fwt*(fvv + bxext*ux + byext*uy) -- Fo terms
+  63 : 		end
+  64 : 		fxx,fyy = fxx*area, fyy*area -- common area weighting
+  65 : 		for i=1,3 do -- loop over triangle nodes
+  66 : 			nnd,lk = trik[i], lkpts[i] -- primary node number
+  67 : 			fb,fbx,fby,fc = 0.0, 0.0, 0.0, 0.0 -- b matrix factor, ux and uy factors
+  68 : 			--lk = lkpts[i]; 
+  69 : 			for j=1,4 do -- Step over itegration points
+  70 : 				fb = fb + lk[j]*fv[j] -- b matrix weighting
+  71 : 				fbx,fby = fbx + lk[j]*fx[j], fby + lk[j]*fy[j] -- ux,uy weighting
+  72 : 			end
+  73 : 			fbx,fby = fbx*area, fby*area -- common area weithting
+  74 : 			arow = a[nnd] -- Row of a matrix for inserting
+  75 : 			hx,hy = he[i][2], he[i][3] -- h factor derivatives
+  76 : 			b[nnd] = b[nnd] - fb*area - ux*hx*fxx - uy*hy*fyy 
+  77 : 			for j=1,3 do -- step over 3 shape functions
+  78 : 				nc, hji,fc ,lj= trik[j], he[j], 0.0, lkpts[j]
+  79 : 				lx,ly = hji[2], hji[3] -- derivatives of shape functions
+  80 : 				fa = hx*lx*fxx + hy*ly*fyy -- uxx and uyy factors
+  81 : 				if fa~=0.0 then arow[nc] = (arow[nc] or 0) + fa end 
+  82 : 				if fbx~=0.0 then arow[nc] = (arow[nc] or 0) + fbx*lx end -- ux factors
+  83 : 				if fby~=0.0 then arow[nc] = (arow[nc] or 0) + fby*ly end -- uy factors
+  84 : 				for k=1,4 do fc = fc + fu[k]*lk[k]*lj[k] end -- sum u factors
+  85 : 				if fc~=0.0 then arow[nc] = (arow[nc] or 0) + fc*area end -- u factors
+  86 : 			end
+  87 : 		end
+  88 : 	end
+  89 : 	for k,sda in pairs(sds) do -- Loop over boundary nodes
+  90 : 		arow,ut,ux = a[k], u[k], 0.0
+  91 : 		--ut,ux = u[k], 0.0 
+  92 : 		n1,n2,n3 = k,sda[1][2],sda[2][2]
+  93 : 		m1,mk[1],mk[2] = nds[k][3],nds[n2][3],nds[n3][3] -- boundary condition markers
+  94 : 		for j=1,2 do -- loop over two sides
+  95 : 			s1 = sda[j]; n1 = s1[2]
+  96 : 			if sda[1][3]<0 then nsgn = -1 else nsgn = 1 end
+  97 : 			xt,yt = nds[k][1] - nds[n1][1], nds[k][2] - nds[n1][2]
+  98 : 			fu[j] = sqrt(xt^2 + yt^2)
+  99 : 			xn[j],yn[j] = -yt*nsgn, xt*nsgn -- normal vector for sides * length
+ 100 : 		end
+ 101 : 		lt = fu[1] + fu[2]
+ 102 : 		for j=1,2 do 
+ 103 : 			s1 = sda[j]; if s1[3]<0 then ntri = s1[4] else ntri = s1[3] end
+ 104 : 			ux = ux + (uxa[ntri]*xn[j]+uya[ntri]*yn[j])/lt -- weighted normal field
+ 105 : 		end
+ 106 : 		fvv = eqb(k,ut,ux,m1,k)
+ 107 : 		fb = (eqb(k,ut,ux+fctux,m1,k)-fvv)/fctux -- normal derivtaive factor
+ 108 : 		if fb==0.0 then -- No derivative term present in boundary condition
+ 109 : 			arow = {}; a[k] = arow
+ 110 : 			arow[k] = (eqb(k,ut+fctu,ux,m1,k)-fvv)/fctu; b[k] = -fvv
+ 111 : 		else -- Mixed or normal boundary condition
+ 112 : 			if m1==mk[1] then mk[2] = m1 -- Test for equal boundary markers
+ 113 : 			elseif m1==mk[2] then mk[1] = m1 end -- else isolated boundary node
+ 114 : 			for j=1,2 do -- Now get mixed boundary conditions
+ 115 : 				s1 = sda[j]; n1 = s1[2]
+ 116 : 				if s1[3]<0 then ntri = s1[4] else ntri = s1[3] end
+ 117 : 				ux = (uxa[ntri]*xn[j]+uya[ntri]*yn[j])/fu[j] -- mormal field
+ 118 : 				fvv =  eqb(k,ut,ux,mk[j],k)
+ 119 : 				fyy = (eqb(k,ut+fctu,ux,mk[j],k)-fvv)/fctu
+ 120 : 				fxx = (eqb(k,ut,ux+fctux,mk[j],k)-fvv)/fctux
+ 121 : 				if fyy~=0.0 then
+ 122 : 					arow[k],arow[n1]=arow[k]-fyy*fu[j]/(fxx*3),arow[n1]-fyy*fu[j]/(fxx*6)
+ 123 : 				end
+ 124 : 				b[k] = b[k] + fvv*fu[j]/(fxx*2) - ux*fu[j]/2 + (fyy*u[k]*fu[j]/(fxx*3) + fyy*u[n1]*fu[j]/(fxx*6))
+ 125 : 			end
+ 126 : 		end
+ 127 : 	end
+ 128 : 	return a,b
+ 129 : end
+ 130 : setfenv(setup2feeqs,{FACT=1.e-4,NHF=NHF,table=table,Spmat=Spmat,sqrt=math.sqrt,
+ 131 : max=math.max,abs=math.abs,calcsh=calcsh,deriv1tri=deriv1tri,deriv2tri=deriv2tri,he=he,
+ 132 : pairs=pairs,truefd=false,print=print,table=table,whatis=whatis})

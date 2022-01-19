@@ -1,0 +1,76 @@
+   1 : -- /* File spgauss.lua */
+   2 : 
+   3 : spgauss = function (a,b,n) -- Gauss elimination for sparse matrix a[][] and b[]
+   4 : 	local nel = {{},{}} -- arrays for usage statistics
+   5 : 	local jret,jprint,jpold,nct,ug1 = 1,1,1,0,0 -- print, usage parameters
+   6 : 	n = n or #a 
+   7 : 	if n < 2 then -- Low dimension matrix -- Special case
+   8 : 		if n<1 then return b,-1 end
+   9 : 		row = a[1]
+  10 : 		if row[1] ~= 0.0 then b[1]= b[1]/row[1] return b,1 end
+  11 : 		return b,-1
+  12 : 	end
+  13 : 	for i=1,n do  -- Find largest value in each row and divide row elements by largest value
+  14 : 		ap,row=0.0, a[i]
+  15 : 		for j,v in pairs(row) do ap = max(ap,abs(v)) end -- ap = largest value in row i
+  16 : 		if ap==0.0 then ap=1.0 end; ap = 1/ap
+  17 : 		for j,v in pairs(row) do row[j] = v*ap end
+  18 : 		b[i] = (b[i] or 0)*ap -- All elements of b[] exist after this loop
+  19 : 	end
+  20 : 	for j=1,n do -- Elimination for each row in matrix
+  21 : 		jp1,ap = j+1, 0.0
+  22 : 		for i=j,n do -- Find largest value in column j, going from row j to row n
+  23 : 			am = a[i][j] 
+  24 : 			if am and abs(am)>abs(ap) then ap,imax = am,i end
+  25 : 		end -- At end ap = largest value in column j to be eliminated and imax has row number
+  26 : 		if abs(ap) <= eps then -- Probably singular matrix with no solution
+  27 : 			jret=0; if ap==0.0 then return -2 end -- Singular matrix with no solution
+  28 : 		end
+  29 : 		if imax~=j then -- Swap rows of a and b
+  30 : 			a[imax],a[j],b[imax],b[j] = a[j],a[imax],b[j],b[imax] 
+  31 : 		end
+  32 : 		row,b[j] = a[j],b[j]/ap; row[j] = nil -- Normalize new row
+  33 : 		for k,v in pairs(row) do row[k] = v/ap end 
+  34 : 		if j<n then -- Eliminate elements if not last row
+  35 : 			rowj=a[j] -- Selece row j values 
+  36 : 			for ix=jp1,n do -- Step rows from j+1 to row n
+  37 : 				row=a[ix]; rowij = row[j] -- Select row ix values
+  38 : 				if rowij then -- Non nil value
+  39 : 					row[j] = nil
+  40 : 					for jx,v in pairs(rowj) do -- Step through columns of row j
+  41 : 						row[jx] = (row[jx] or 0) - rowij*v
+  42 : 					end
+  43 : 					b[ix] = b[ix] - b[j]*rowij
+  44 : 				end
+  45 : 			end
+  46 : 		end
+  47 : 		if usage==2 then -- Collect usage statistics
+  48 : 			ug1= 0
+  49 : 			for _,_ in pairs(a[j]) do nct = nct+1 end -- Row n
+  50 : 			for jj=j+1,n do -- Rows beyond n
+  51 : 				for _,_ in pairs(a[jj]) do ug1 = ug1+1 end
+  52 : 			end 
+  53 : 			nel[1][j], nel[2][j] = j, nct + ug1
+  54 : 		end
+  55 : 		if nprint then -- Print at each 100 rows
+  56 : 			jprint = floor(j/100)
+  57 : 			if jprint==jpold then
+  58 : 				jpold=jprint+1; print("Completed row ",j," in spgauss");io.flush() 
+  59 : 				if usage==2 then print("Number of matrix elements =",nct+ug1) end
+  60 : 			end
+  61 : 		end
+  62 : 	end
+  63 : 	for j=n-1,1,-1 do -- Back substitute from row n-1 to row 1
+  64 : 		row = a[j]; for k,v in pairs(row) do b[j] = b[j] - v*b[k] end
+  65 : 	end
+  66 : 	if usage==1 then -- Collect usage statistics at end
+  67 : 		nct = 0
+  68 : 		for jj=1,n do
+  69 : 			for _,_ in pairs(a[jj]) do nct = nct+1 end
+  70 : 		end
+  71 : 		nel[1][1],nel[2][1] = n, nct
+  72 : 	end
+  73 : 	return b,jret,nel
+  74 : end
+  75 : setfenv(spgauss,{abs=(Complex or math).abs,min=math.min,max=math.max,floor=math.floor,
+  76 : io=io,print=print,pairs=pairs,nprint=nil,usage=nil,eps=1.e-12})

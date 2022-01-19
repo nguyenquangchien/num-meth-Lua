@@ -1,0 +1,32 @@
+   1 : -- /* File list9_13.lua */ -- Data fitting, Parameter estimation for transfer function
+   2 : 
+   3 : requires("nlstsq","Polynomial")
+   4 : 
+   5 : -- Section 1. Input data file and define fitting function
+   6 : infile = 'amplifier2' -- or 'amplifier3'
+   7 : xd,yd,_ = {},{},{}; read_data(infile..'.dat',xd,_,_,yd) -- columns 1 and 4 of fule
+   8 : 
+   9 : c1,f1,f2,f3,f4,f5,f6,f7 = 22,70,7,10,300,3e7,1e8,1e9 -- Initial guesses
+  10 : c1 = c1*f1/(f2*f3*f4)
+  11 : p1 = Polynomial.new{1,1/f2}*{1,1/f3}*{1,1/f4}
+  12 : p2 = Polynomial.new{1,1/f5}*{1,1/f6}
+  13 : c = {c1,1/f1,p1[2],p1[3],p1[4],p2[2],p2[3],1/f7}; nc = #c
+  14 : 
+  15 : ft = function(x,c) -- Define function to fit data
+  16 : 	w = j*x[2]
+  17 : 	h = c[1]*w^2*(1+c[2]*w)/(1+c[3]*w+c[4]*w^2+c[5]*w^3)*
+  18 : 		(1+c[8]*w)/(1+c[6]*w+c[7]*w^2)
+  19 : 	return  20*math.log10(Complex.abs(h)) - x[1]
+  20 : end
+  21 : 
+  22 : --- Section 2. Perform data fit and print model parameters
+  23 : del,err,nx =nlstsq({yd,xd},fw,ft,c) -- Call fiting, print max iterations 
+  24 : print('Number of iterations,err =',nx,err)
+  25 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  26 : print('Zeros of Transfer Function at (in Hz):')
+  27 : print(-1/c[2]); print(-1/c[6])
+  28 : roots = Polynomial.roots{1,c[3],c[4],c[5]}
+  29 : print('Poles of Transfer Function at (in Hz):')
+  30 : print(roots[1]); print(roots[2]); print(roots[3])
+  31 : roots = Polynomial.roots{1,c[6],c[7]}
+  32 : print(roots[1]); print(roots[2])

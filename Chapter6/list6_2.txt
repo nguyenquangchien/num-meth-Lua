@@ -1,0 +1,13 @@
+   1 : -- /* File list6_2.lua */ -- Linear interpolation using lintpf()
+   2 : 	
+   3 : require'intp'
+   4 : xd = {0,1,2,3,4,5}; yd = {3,4,4.5,4,3,2.5}
+   5 : ff = lintpf(xd,yd) --- Convert to function
+   6 : 
+   7 : x,y = {},{}
+   8 : i,xv =1, -1
+   9 : while xv<6.001 do
+  10 : 	x[i],y[i] = xv, ff(xv) -- Call function
+  11 : 	i,xv  = i+1, xv+.01
+  12 : end 
+  13 : write_data('list6_2.dat',x,y); plot(x,y)

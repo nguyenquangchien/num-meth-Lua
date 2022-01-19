@@ -1,0 +1,24 @@
+   1 : --/* File list4_22.lua */
+   2 : 
+   3 : require "Matrix" -- Load matrix manipulation code
+   4 : 
+   5 : --Tests of matrix operations	
+   6 : ax = Matrix.new({{1,1,1},{2,2,1},{3,3,1}})
+   7 : ay = Matrix.new({{3,1,0},{1,-2,1},{-1,2,-1}})
+   8 : az = ax+ay -- Matrix addition
+   9 : print("Type of az is: ",type(az))
+  10 : 
+  11 : az = ax*ay -- Matrix multiplication
+  12 : print('Matrix az is:'); print(az)
+  13 : a = Matrix.new{ -- New matrix definition
+  14 : 	{1, 0.1, 0, 0, 0},
+  15 : 	{0.1, 1, 0.1, 0, 0},
+  16 : 	{0, 0.1, 1, 0.1, 0},
+  17 : 	{0 ,0, 0.1, 1, 0.1},
+  18 : 	{0, 0, 0, 0.1, 1}}
+  19 : m,n = Matrix.size(a) -- Obtain size of matrix a
+  20 : print("Size of matrix a is: ",m,n)
+  21 : -- Take inverse of matrix
+  22 : b = a^-1 -- Or b = Matrix.inv(a) or b = a:inv()
+  23 : print(b,'\n')
+  24 : print(b*a) -- Should be unity diagonal matrix

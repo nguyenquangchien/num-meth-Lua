@@ -1,0 +1,31 @@
+   1 : -- /* File list4_27.lua */
+   2 : -- Tests of eigenvalues and eigenvectors
+   3 : 
+   4 : require"Polynomial"
+   5 : require"Matrix"
+   6 : 
+   7 : n = 10; A = Matrix.new(n)
+   8 : for i=1,n do
+   9 : 	for j=1,n do
+  10 : 		if j==i-1 then A[i][j] = -1
+  11 : 		elseif j==i then A[i][j] = 2
+  12 : 		elseif j==i+1 then A[i][j] = -1
+  13 : 		else A[i][j] = 0 end
+  14 : 	end
+  15 : end	
+  16 : print(A)
+  17 : 
+  18 : ev,rts = Matrix.eigenvectors(A)
+  19 : print('Eigenvectors \n',ev,'\nEigenvalues')
+  20 : table.foreach(rts,print)
+  21 : 
+  22 : A = Matrix.new{{300,-200,0},{-200,500,-300},{0,-300,300}}
+  23 : B = Matrix.new{{4,-1,1},{-1,6,-4},{1,-4,5}}
+  24 : rts = Matrix.eigenvalues(A,B)
+  25 : print('Eigenvalues for A and B matrix problem')
+  26 : table.foreach(rts,print)
+  27 : 
+  28 : a = Matrix.new{{2+j,-2-j,3},{2,j,-3+2*j},{j,4-j,3*j}}
+  29 : rts = Matrix.eigenvalues(a)
+  30 : print('Eigenvalues for complex matrix')
+  31 : table.foreach(rts,print)

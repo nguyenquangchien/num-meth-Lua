@@ -1,0 +1,35 @@
+   1 : -- /* File list9_1.lua */ -- Data fitting and 6 plots for Figure 9.1
+   2 : 
+   3 : requires("nlstsq", "prob", "DataFit")
+   4 : 
+   5 : xd,yd = {},{} -- Data arrays
+   6 : read_data('list7_1.dat',xd,yd); nd = #xd -- Read in data set to be fitted
+   7 : 
+   8 : ft = function(x,c) -- Define function to fit data
+   9 : 	return c[1]*(1 - math.exp(c[2]*x[2])) - x[1]
+  10 : end
+  11 : 
+  12 : c = {1,-.2}; nc = #c -- Initial guess at coefficients
+  13 : del,err,nmax = nlstsq({yd,xd},fw,ft,c) -- Call fiting 
+  14 : print('err, nmax =',err,nmax) -- print results
+  15 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  16 : -- Generate 6-Plot data
+  17 : ycalc,res,yres1,yres2 = {},{},{},{}
+  18 : for i=1,nd do -- Calculate fitted values and residuals
+  19 : 	ycalc[i] = ft({0,xd[i]},c)
+  20 : 	res[i] = yd[i]-ycalc[i]
+  21 : end
+  22 : fres1,fres2 = datafit({res,xd}), datafit({res,ycalc})  -- Fit to residual data
+  23 : for i=1,nd do yres1[i],yres2[i] = fres1(xd[i]), fres2(ycalc[i]) end
+  24 : xp,yp = makeCDF(res); xpn,ypn = normalCDF(res) -- CDF data for residuals
+  25 : xh,yh = hist(res,15); xhn,yhn = histnorm(res,15) -- Histogram data
+  26 : xl,yl = lag(res) -- lag data for residuals
+  27 : write_data('list9_1.dat',xd,yd,ycalc,res,yres1,yres2,xp,yp,ypn,xl,yl,xh,yh,yhn)
+  28 : -- Now show 6 plots
+  29 : plot(xd,yd,ycalc) -- Plot 1 -- Predicted values and data points
+  30 : plot(xd,res,yres1) -- Plot 2 -- Residuals vs x
+  31 : plot(ycalc,res,yres2) -- Plot 3 -- Residuals vs y
+  32 : scatterplot(xl,yl) -- Plot 4 -- Lag plot of residuals
+  33 : plot(xh,yh,yhn) -- Plot 5 -- Histogram plot of residuals 
+  34 : plot(xp,yp,ypn) -- Plot 6 -- Distribution plot of residuals
+  35 : 

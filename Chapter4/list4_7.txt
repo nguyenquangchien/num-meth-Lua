@@ -1,0 +1,30 @@
+   1 : -- File list4_7.lua Program for the voltages of a Full Wave Rectifier
+   2 : -- Exponential functions present special convergence problems
+   3 : 
+   4 : require"nsolv"
+   5 : exp = math.exp; pi2 = math.pi*2 -- Simpler to type
+   6 : 
+   7 : Is,Rl,Vt = 1.e-14,5000,.026 -- Basic parameters
+   8 : Vm = 15 -- Magnitude of source voltage -- change as desired
+   9 : NMAX = getfenv(nsolv).NMAX -- Get max number of iterations
+  10 : 
+  11 : fwr = function(I,v)
+  12 : 	I[1] = (v[1]-v[2])/Rl - Is*(exp((vs-v[1])/Vt)-1) - Is*(exp(-v[1]/Vt)-1) 
+  13 : 	I[2] = (v[2]-v[1])/Rl + Is*(exp((v[2]-vs)/Vt)-1) + Is*(exp(v[2]/Vt)-1) 
+  14 : end
+  15 : 
+  16 : step = {-.8,-.8} -- Not too critical .2 to 1.2 seems to work fine
+  17 : x = {0,0} -- Just need value to get started
+  18 : xa,v1,v2,v3,vout = {},{},{},{},{} -- Arrays for values
+  19 : 
+  20 : for i=1,401 do
+  21 : 		xt = (i-1)*pi2/400; xa[i] = xt
+  22 : 		vs = Vm*math.sin(xt)
+  23 : 		nit,err = nsolv(fwr,x,step) -- Use previous solution as guess
+  24 : 		if nit==NMAX then print('Convergence error at i = ',i,err) end
+  25 : 		v3[i],v1[i],v2[i] = vs, x[1], x[2]
+  26 : 		vout[i] = x[1]-x[2] -- Output voltage
+  27 : end
+  28 : 
+  29 : write_data("list4_7.dat",xa,v1,v2,v3,vout)
+  30 : plot(xa,v3,vout)

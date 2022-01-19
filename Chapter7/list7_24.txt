@@ -1,0 +1,39 @@
+   1 : -- /* File list7_24.lua */ -- Two step fitting to rational polynomial
+   2 : 
+   3 : require"nlstsq"
+   4 : 
+   5 : fft = function(yx,c) -- Final fitting function, Nonlinear in C's
+   6 : 	x = yx[2]
+   7 : 	return (c[1]+ c[2]*x+c[3]*x^2+c[4]*x^3)/(1+c[5]*x+c[6]*x^2+c[7]*x^3) - yx[1]
+   8 : end
+   9 : fft1 = function(yx,c) -- First approximation, Linear in C's
+  10 : 	x,xy = yx[2],yx[2]*yx[3]
+  11 : 	return (c[1]+ c[2]*x+c[3]*x^2+c[4]*x^3) - xy*(c[5]+c[6]*x+c[7]*x^2) -yx[1]
+  12 : end
+  13 : 
+  14 : xd,yd={},{}
+  15 : nd = read_data('thurber.dat',yd,xd) -- Read data
+  16 : c = {0,0,0,0,0,0,0}; nc = #c
+  17 : actv,step = {},{}
+  18 : for i=1,nc do actv[i],step[i] = 1,0 end -- No limits on steps
+  19 : yx = {yd,xd,yd} -- Data values, pass y values as third argument
+  20 : 
+  21 : del,err,nmax = nlstsq(yx,fw,fft1,c,actv,step) -- Step 1 -- Linear in C's
+  22 : print(err,nmax,'-- First Approximation') -- print results
+  23 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  24 : 
+  25 : for i=5,nc do step[i] = 1.2 end -- Set limits on steps for denominator coefficients
+  26 : del,err,nmax = nlstsq(yx,fw,fft,c,actv,step) -- Step 2 -- Nonlinear in C's
+  27 : print(err,nmax,'-- Final Calculation') -- print results
+  28 : for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  29 : 
+  30 : xmin,xmax,nx = xd[1],xd[nd],1000
+  31 : dx = (xmax-xmin)/nx; xx,yy={},{}
+  32 : for i=1,nx do 
+  33 : 	xx[i] = xmin+dx*(i-1)
+  34 : 	yy[i] = fft({0,xx[i]},c)
+  35 : end
+  36 : plot(xx,yy)
+  37 : write_data("list7_24.dat",xx,yy) -- Save data 
+  38 : 
+  39 : 

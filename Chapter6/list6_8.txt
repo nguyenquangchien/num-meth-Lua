@@ -1,0 +1,23 @@
+   1 : -- /* File list6_8.lua */ -- Interpolation example with amplifier data
+   2 : require"intp"
+   3 : 
+   4 : xd,yd,_ = {},{},{} -- dummy table _ = {}
+   5 : read_data('list4_10.dat',yd,_,_,_,xd)
+   6 : 
+   7 : npt,xm,im = #xd, 0, 0 
+   8 : -- Search for largest value in gain -- xd here
+   9 : for i=1,npt do if xd[i]>xm then xm,im = xd[i],i end end
+  10 : 
+  11 : h3db = xm-10*math.log10(2) -- -3Db gain value
+  12 : fl = intp(xd,yd,h3db) -- Lower -3dB frequency
+  13 : 
+  14 : i=1
+  15 : for j= npt,im,-1 do -- Define table for upper -3dB range
+  16 : 	 xd[i],yd[i],i = xd[j], yd[j], i+1
+  17 :  end -- Reverse x data for increasing table values
+  18 :  
+  19 : fh = intp(xd,yd,h3db) -- Upper -3dB frequency
+  20 : printf("Maxumim gain in dB =   %12.4e dB\n",xm)
+  21 : printf("Lower 3dB Frequency = %12.4e Hz\n",fl)
+  22 : printf("Upper 3dB Frequenty = %12.4e Hz\n",fh)
+  23 : printf("Amplifier Bandwidth   = %12.4e Hz\n",fh-fl)

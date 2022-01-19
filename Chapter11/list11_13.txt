@@ -1,0 +1,20 @@
+   1 : -- /* File list11_13.lua */
+   2 : -- Eigenvalue problem for screened Coulomb potential
+   3 : require"odebv";require"intp"
+   4 : 
+   5 : f1 = function(eqs,E,x,u,up,upp) -- Hydrogen atom
+   6 : 	eqs[1] = upp[1] + (2*math.exp(-x/Ld)/x + E[1] - L*(L+1)/x^2)*u[1]
+   7 : end
+   8 : 
+   9 : L = 0; Ld = 2
+  10 : nx,xmax,Ei = 2000, 20, -1
+  11 : E = {Ei}
+  12 : 
+  13 : s = odebvev({f1,E},{0,xmax,nx},{0},{1})
+  14 : print('Energy eigenvalue = ', E[1])
+  15 : sn,sqn = sqnorm(s,1.0)
+  16 : plot(sn); plot(sqn) 
+  17 : write_data('list11_13.dat',s,sn,sqn)
+  18 : 
+  19 : 
+  20 : 

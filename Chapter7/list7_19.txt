@@ -1,0 +1,14 @@
+   1 : -- /* File list7_19.lua */  Fit to gauss3.dat with selected knots
+   2 : 
+   3 : require "DataFit"
+   4 : 
+   5 : xd,yd,xcalc,ycalc={},{},{},{}
+   6 : read_data('Gauss3.dat',yd,xd) -- Read data
+   7 : xc = {0,35,70,75,85,95,103,112,117,125,135,140,148,
+   8 : 162,180,190,210,250}
+   9 : c = {}
+  10 : fxc = datafit({yd,xd},{xc,c})
+  11 : for i=1,#xd do ycalc[i] = fxc(xd[i]) end
+  12 : plot(xd,yd,ycalc)
+  13 : write_data("list7_19.dat",xd,yd,ycalc) -- Save data 
+  14 : 

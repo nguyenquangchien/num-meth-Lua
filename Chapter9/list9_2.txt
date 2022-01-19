@@ -1,0 +1,10 @@
+   1 : -- /* File list9_2.lua */ -- Data fitting and 6 plots for Figure 9.1
+--------
+   8 : ft = function(x,c) -- Define function to fit data
+   9 : 	return c[1]*x[2]/(x[2]^c[2]+c[3])^(1/c[2]) - x[1]
+  10 : end
+  11 : 
+  12 : c = {1,2,100}; nc = #c -- Initial guess at coefficients
+------- Same as Listing 9.1
+  35 : nr,prb = runs(res)
+  36 : print('Prob of observed '..nr..' runs is '..engr(100*prb,'%'))

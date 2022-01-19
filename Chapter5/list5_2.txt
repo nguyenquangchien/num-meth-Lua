@@ -1,0 +1,53 @@
+   1 : --/* File deriv.lua */ -- Derivative with Richardson's extrapolation
+   2 : deriv = function(f, x,...)  -- Central derivative of f(x)
+   3 : 	local dx = DXX*x -- DXX = .01 to begin
+   4 : 	if dx==0.0 then dx = DXX end
+   5 : 	local a = {(f(x+dx,...) - f(x-dx,...))/(2*dx)}
+   6 : 	local p2, nj
+   7 : 	for j=1,NMAX do -- Richardson's improvement
+   8 : 		dx = dx/2; p2 = 4 -- Second order error
+   9 : 		a[j+1] = (f(x+dx,...) - f(x-dx,...))/(2*dx)
+  10 : 		for k=j,1,-1 do
+  11 : 			a[k],p2 = (p2*a[k+1] - a[k])/(p2-1), 4*p2
+  12 : 		end
+  13 : 		nj = j
+  14 : 		p2 = abs(a[1]-a[2])/abs(a[1]+a[2])
+  15 : 		if p2<err then break end
+  16 : 	end
+  17 : 	return a[1],nj,p2
+  18 : end
+  19 : setfenv(deriv,{abs=(Complex or math).abs,NMAX=10,DXX=1.e-2,err=1.e-14})
+  20 : deriv2 = function(f, x,...) -- Function for second derivative of f(x)
+  21 : 	return deriv((function(x,...) return deriv(f, x,...) end), x,...)
+  22 : end
+  23 : rderiv = function(f, x,...) -- Right derivative of f(x)
+  24 : 	local dx = abs(DXX*x) -- DXX = .01 to begin
+  25 : 	if dx==0.0 then dx = DXX end
+  26 : 	local x0 = x + dx*DXD -- A little right of point
+  27 : 	local a = {(f(x0+dx,...)-f(x0,...))/dx} -- One sided derivative
+  28 : 	local p2, nj
+  29 : 	for j=1,NMAX do -- Richardson's improvement
+  30 : 		dx = dx/2; p2 = 2 -- First order error
+  31 : 		x0 = x + dx*DXD
+  32 : 		a[j+1] = (f(x0+dx,...)-f(x0,...))/dx
+  33 : 		for k=j,1,-1 do
+  34 : 			a[k],p2 = (p2*a[k+1] - a[k])/(p2-1), 2*p2
+  35 : 		end
+  36 : 		nj = j
+  37 : 		p2 = abs(a[1]-a[2])/abs(a[1]+a[2])
+  38 : 		if p2<err then break end
+  39 : 	end
+  40 : 	return a[1], nj, p2
+  41 : end
+  42 : setfenv(rderiv,{abs=(Complex or math).abs,NMAX=10,DXX=1.e-2,DXD=1.e-6,err=1.e-14})
+  43 : rderiv2 = function(f, x,...) -- Right second derivative of f(x)
+  44 : 	return rderiv((function(x,...) return rderiv(f, x,...) end), x,...)
+  45 : end
+-----
+-----
+  69 : sderiv = function(f,x,...)
+  70 : 	local dx = abs(DXX*x)
+  71 : 	if dx==0.0 then dx = DXX end
+  72 : 	return (f(x+dx,...)-f(x-dx,...))/(2*dx)
+  73 : end
+  74 : setfenv(sderiv,{DXX=1.e-6,abs=(Complex or math).abs})

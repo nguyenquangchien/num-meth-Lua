@@ -1,0 +1,17 @@
+   1 : -- /* File list10_30.lua */
+   2 : -- Lorentz equations
+   3 : require"odeiv"
+   4 : 
+   5 : a,b,c = 10,28,8/3
+   6 : f = function(eqs,t,y,yp)
+   7 : 	eqs[1] = yp[1] + a*(y[1] - y[2])
+   8 : 	eqs[2] = yp[2] + y[2] + y[1]*y[3] - b*y[1]
+   9 : 	eqs[3] = yp[3] + c*y[3] - y[1]*y[2]
+  10 : end
+  11 : 
+  12 : s1 = odeivs(f,{0,40},{5,5,5})
+  13 : s2 = odeivs(f,{0,40},{5.0001,5,5})
+  14 : s3 = odeivs(f,{0,40},{5.000001,5,5})
+  15 : plot(s1,s2)
+  16 : write_data("list10_30.dat",s1,s2,s3)
+  17 : 

@@ -1,0 +1,46 @@
+   1 : -- /* File list12_6.lua */
+   2 : -- Programs to integrate diffusion equation in one spatial variable
+   3 : 
+   4 : require"pdeivbv"; require'odebvfd'
+   5 : require"elemfunc"; erfc = elemfunc.erfc
+   6 : getfenv(pdeivbv).nprint = 1; getfenv(pdeivbvqs).nprint=1
+   7 : getfenv(ode2bvfd).NMAX = 1 -- Only one iteration required
+   8 : -- Model equations to be solved
+   9 : L,D = 1,1; u = {}
+  10 : 
+  11 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  12 : 	fu[1] = ut[1] - D*upp[1] -- Diffusion equation
+  13 : end
+  14 : efl = function(fu,u,up) -- Left boundary fixed at 1.0
+  15 : 	fu[1] = u[1] - 1.0
+  16 : end
+  17 : efr = function(fu,u,up) -- Right boundary, fixed at 0.0
+  18 : 	fu[1] = u[1] - 0.0  
+  19 : end
+  20 : 
+  21 : Nx = 400
+  22 : --Nx = 200 -- Half spatial steps
+  23 : x = xlg(0,1,1.e-6,Nx) -- Set up x and u arrays
+  24 : for i=1,Nx+1 do u[i] = 0.0 end 
+  25 : 
+  26 : sol = pdeivbvqs({eq,efl,efr},{0,{1.e-6,1.e-2},1,20},x,u)
+  27 : --sol = pdeivbvqs({eq,efl,efr},{0,{1.e-6,1.e-2},1,10},x,u) -- Half time steps
+  28 : u1,u2 = {},{} -- Theoretical values
+  29 : t = 1.e-6
+  30 : for i=1,Nx+1 do u1[i] = erfc(x[i]/(2*math.sqrt(t))) end 
+  31 : t = 1.e-2
+  32 : for i=1,Nx+1 do u2[i] = erfc(x[i]/(2*math.sqrt(t))) end 
+  33 : emax = 0.0
+  34 : for i=1,Nx+1 do
+  35 : 	 ex = math.abs(sol[3][i] - u1[i])
+  36 : 	 if ex>emax then emax = ex end
+  37 : end
+  38 : print('Max error at t = 1.e-6 is ',emax)
+  39 : emax = 0.0
+  40 : for i=1,Nx+1 do
+  41 : 	 ex = math.abs(sol[7][i] - u2[i])
+  42 : 	 if ex>emax then emax = ex end
+  43 : end
+  44 : print('Max error at t = 1.e-2 is ',emax)
+  45 : plot(sol[1],sol[2],sol[3],sol[#sol])
+  46 : write_data('list12_6.dat',sol,u1,u2)

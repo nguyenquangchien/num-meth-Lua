@@ -1,0 +1,61 @@
+   1 : -- /* File Matrix.lua */
+   2 : -- Package for Matrix algebra and functions -- Restricted to 2 dimensional matrices
+....
+ 240 : function Matrix.trace(a,n) -- Trace of a matrix
+ 241 : 	n = n or #a
+ 242 : 	local tx = a[1][1]
+ 243 : 	for i=2,n do tx = tx + a[i][i] end
+ 244 : 	return tx
+ 245 : end
+ 246 : 
+ 247 : function Matrix.eigeneq(a,n) -- Set up eigenvalue equation
+ 248 : 	n = n or #a
+ 249 : 	local p,pm,px = {}, Matrix.new(a)
+ 250 : 	p[n+1] = -1
+ 251 : 	for i=1,n do
+ 252 : 		px = Matrix.trace(pm)/i
+ 253 : 		for j=1,n do pm[j][j] = pm[j][j] - px end
+ 254 : 		p[n-i+1] = px
+ 255 : 		pm = a*pm -- Matrix multiplication, a and pm both matrices
+ 256 : 	end
+ 257 : 	return p -- form a0 + a1*x + a2*x^2 ...
+ 258 : end
+ 259 : 
+ 260 : function Matrix.eigenvectors(ai,eval) -- Calculate Matrix Eigenvectors
+ 261 : 	local n = #ai
+ 262 : 	if type(ai)~='Matrix' then ai = Matrix.new(ai) end
+ 263 : 	eval = eval or Matrix.eigenvalues(ai,n) -- Get eigenvalues if not input
+ 264 : 	local evect,b,big,tmp = Matrix.new(n),{}
+ 265 : 	b[n] = 1 -- Assume one value for solution
+ 266 : 	for j=1,n do -- Loop over eigenvalues
+ 267 : 		a = Matrix.new(ai) -- Make copy for use in gauss()
+ 268 : 		for i=1,n-1 do
+ 269 : 			b[i] = -a[i][n]
+ 270 : 			a[i][i] = a[i][i] - eval[j] -- Subtract eigenvalue
+ 271 : 		end
+ 272 : 		gauss(a,b,n-1) -- Solve for one eigenvector, a and b changed in gauss()
+ 273 : 		big = 0
+ 274 : 		for i=1,n do -- Normalize so largest element is +/- 1.000
+ 275 : 			tmp = abs(b[i])
+ 276 : 			if tmp> big then big = tmp end
+ 277 : 		end
+ 278 : 		for i=1,n do evect[i][j] = b[i]/big end
+ 279 : 	end
+ 280 : 	return evect,eval -- Also return eigenvalues for possible use
+ 281 : end
+ 282 : 	
+ 283 : function Matrix.eigenvalues(a,b,n) -- Set up equation and solve using roots()
+ 284 : 	require"Polynomial" -- Only load if needed for roots()
+ 285 : 	local d
+ 286 : 	if type(a)=='table' then a = Matrix.new(a) end
+ 287 : 	if type(b)=='table' then b = Matrix.new(b) end
+ 288 : 	if b==nil then d = a 
+ 289 : 	elseif type(b)=='number' then d,n = a,b 
+ 290 : 	elseif type(b)=='Matrix' then d = b^-1*a 
+ 291 : 	else print('b must be a matrix in eigenvalues') end
+ 292 : 	local rts = Polynomial.roots(Matrix.eigeneq(d,n))
+ 293 : 	table.sort(rts,function(a,b) 
+ 294 : 		if type(a)=='Complex' or type(b)=='Complex' then return Complex.abs(a)>Complex.abs(b)
+ 295 : 		else return a>b end end) -- sort eigenvalues
+ 296 : 	return rts,d -- Sorted most positive to most negative
+ 297 : end	

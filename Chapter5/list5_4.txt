@@ -1,0 +1,29 @@
+   1 : -- /* File list5_4.lua */ -- Finding maximum and minimum values
+   2 : 
+   3 : require"deriv"; require"newton"
+   4 : 
+   5 : pos = 6.3324567
+   6 : f1 = function(x) return math.exp((x-pos)^2) end
+   7 : f2 = function(x) return -(x+pos)^4 end
+   8 : f3 = function(x) return 5*x^4-4*x^2+2*x-3 end
+   9 : 
+  10 : fderiv = function(f)
+  11 : 	return function(x) return deriv(f,x) end
+  12 : end
+  13 : f1deriv = fderiv(f1)
+  14 : 
+  15 : sol,n,err = newton(f1deriv,0)
+  16 : print(sol,n,err,f1(sol),(sol-pos)/pos)
+  17 : if f1(sol)<f1(1.01*sol) then print("solution is a minimum at ",sol)
+  18 : else print("solution is a maximum at ",sol) end
+  19 : 
+  20 : sol,n,err = newton(fderiv(f2),0)
+  21 : print(sol,n,err,f2(sol),(sol+pos)/pos)
+  22 : if f2(sol)<f2(1.01*sol) then print("solution is a minimum at ",sol)
+  23 : else print("solution is a maximum at ",sol) end
+  24 : 
+  25 : sol,n,err = newton(fderiv(f3),0)
+  26 : print(sol,n,err,f2(sol))
+  27 : if f2(sol)<f2(1.01*sol) then print("solution is a minimum at ",sol)
+  28 : else print("solution is a maximum at ",sol) end
+ 

@@ -1,0 +1,19 @@
+   1 : --- /* File list10_22.lua */
+   2 : -- Programs to integrate second order differential equation with sliding friction
+   3 : 
+   4 : require"odeiv"
+   5 : getfenv(odeiv).odebiv = odeb12
+   6 : 
+   7 : g = 983.21
+   8 : w = 100
+   9 : u = 0.02
+  10 : eps = 1.e-2
+  11 : ug = u*g
+  12 : 
+  13 : f1 = function(eqs,t,x,xp,xpp)
+  14 : 	eqs[1] = xpp[1] + ug*xp[1]/math.sqrt(xp[1]^2+eps) + w*x[1]
+  15 : end
+  16 : 
+  17 : s1,err1 = odeivse(f1,{0,9},{10},{0})
+  18 : plot(s1[1],s1[2],err1[2])
+  19 : write_data("list10_22.dat",s1)

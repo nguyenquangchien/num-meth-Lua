@@ -1,0 +1,15 @@
+   1 : -- File list2.7 -- Examples of reading and writing tabluar data
+   2 : 
+   3 : x,y,n = {},{},1000
+   4 : for i=1,n do -- Define tables of values
+   5 : 	x[i] = (i-1)/(n-1)
+   6 : 	y[i] = math.sin(6*math.pi*x[i])
+   7 : end
+   8 : plot(x,y) -- pop-up plot
+   9: write_data('list2.7.dat', x,y) -- Save data to disk file
+  10 : 
+  11 : xy = {{},{}} -- New table of tables for reading data
+  12 : read_data('list2.7.dat',xy) -- Retreive two column data
+  13 : plot(xy[1],xy[2]) -- pop-up plot of retreived data
+  14 : -- xy[1] is same as x and xy[2] is same as y data
+  15 : whatis(xy)

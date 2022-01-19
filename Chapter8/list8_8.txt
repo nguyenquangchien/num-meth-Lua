@@ -1,0 +1,22 @@
+   1 : -- /* File list8_8.lua */ Example of prob limits on std
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : x,y = {},{}
+   6 : f = 1.e-3
+   7 : ds = 'm'
+   8 : read_data('paper.txt',y)
+   9 : nd = #y
+  10 : for i=1,nd do y[i] = f*y[i] end
+  11 : m,std = stats(y)
+  12 : print('mean,std = '..engr(m,ds)..engr(std,ds))
+  13 : stdf,fdfc = std*math.sqrt(nd-1), 1/math.sqrt(2*nd)
+  14 :  
+  15 : pbv = {.6827,.9545,.9,.95,.99,.999}
+  16 : for i=1,#pbv do
+  17 : 	tchL,tchH = tchisq(nd-1,pbv[i])
+  18 : 	varL,varH = stdf/math.sqrt(tchL),stdf/math.sqrt(tchH)
+  19 : 	print(engr(varH,ds)..' < std <'..engr(varL,ds)..' at '..100*pbv[i]..' percent confidence level')
+  20 : end
+  21 : print(engr(std*(1-fdfc),ds)..' < std <'..engr(std*(1+fdfc),ds)..' for standard error bounds ')
+  22 : print(engr(std*(1-2*fdfc),ds)..' < std <'..engr(std*(1+2*fdfc),ds)..' for 2 standard error bounds ')

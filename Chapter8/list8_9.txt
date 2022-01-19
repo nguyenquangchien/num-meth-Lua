@@ -1,0 +1,21 @@
+   1 : -- /* File list8_9.lua */
+   2 : 
+   3 : require"prob"
+   4 : local Pigamma = elemfunc.Pigamma
+   5 : x,y = {},{} -- Display Incomplete Gamma function
+   6 : j,gam = 1,10
+   7 : for i=0,22,.1 do x[j],y[j],j = i,Pigamma(i,gam),j+1 end
+   8 : plot(x,y); write_data('list8_9.dat',x,y) -- plot &save data e
+   9 : 
+  10 : iCDF = function(CDF,prob,xinit,...) -- General inverse CDF function
+  11 : 	local arg = {...}
+  12 : 	local iCDFx =  function(x) -- Function for Newton's method
+  13 : 		return CDF(x,unpack(arg)) - prob
+  14 : 	end
+  15 : 	return newton(iCDFx,xinit) -- Calculate inverse value
+  16 : end
+  17 : 
+  18 : xinit = gam-1 -- Peak slope ocurs here
+  19 : print(iCDF(Pigamma,.05,xinit,gam))
+  20 : print(iCDF(Pigamma,.95,xinit,gam))
+  21 : 		

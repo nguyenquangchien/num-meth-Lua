@@ -1,0 +1,19 @@
+   1 : -- /* File list8_2.lua */ Test of random number generators
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : rand = ran0 -- or math.random, ran1, ran2, ran3 or gnormal
+   6 : nmb = 400 -- or 1000 or 10000
+   7 : 
+   8 : x = {}; for i=1,nmb do x[i] = rand() end
+   9 : print('mean,std,variance,skew = ',stats(x))
+  10 : 
+  11 : xx,yy = makeODF(x)
+  12 : write_data('list8_2a.dat',xx,yy); plot(xx,yy)
+  13 : 
+  14 : xx,yy = lag(x)
+  15 : write_data('list8_2b.dat',xx,yy); scatterplot(xx,yy)
+  16 : 
+  17 : xx,yy = makeCDF(x)
+  18 : write_data('list8_2c.dat',xx,yy); plot(xx,yy)
+  19 : 

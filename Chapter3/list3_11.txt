@@ -1,0 +1,15 @@
+   1 :  --/* File list3_11.lua */ -- Example of periodic function
+   2 :  
+   3 : require "newton"
+   4 : 
+   5 : function f(x) return .7 - math.sin(x*math.pi/4)^4 end
+   6 : 
+   7 : i = 1;x,y = {},{}
+   8 : for xx=0,10,.002 do 
+   9 : 	x[i],y[i] = xx,f(xx)
+  10 : 	i = i+1
+  11 : end
+  12 : plot(x,y); write_data('list3.11.dat',x,y)	
+  13 : print(newton(f,0.1))
+  14 : print(newton(f,1))
+  15 : print(newton(f,3))

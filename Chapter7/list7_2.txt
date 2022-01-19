@@ -1,0 +1,35 @@
+   1 : --/* File list7_2.lua */  Example of solar data for linear data fit
+   2 : require'prob'
+   3 : 
+   4 : jk,yyd,ssd,_ = {},{},{},{}
+   5 : read_data('monthssn.dat',jk,yyd,ssd) -- read data
+   6 : nmths = #jk -- Number of months
+   7 : 
+   8 : prd = 60 -- Approximate period in months
+   9 : pn,pks,mns,ssp = {},{},{},{}
+  10 : i,k,ixx = 1,1,1
+  11 : while i<nmths do
+  12 : 	mx = 0
+  13 : 	for j=ixx,prd+ixx do -- search for peak
+  14 : 		if i>=nmths then break end
+  15 : 		if ssd[i]>mx then mx,mtn,ixm = ssd[i],yyd[i],i end
+  16 : 		i = i+1
+  17 : 	end -- Now have peak
+  18 : 	i = ixm; prd = 120
+  19 : 	pks[k] = mtn; ssp[k] = mx
+  20 : 	mx,ixx = 1.e10,ixx+ixm
+  21 : 	for j=ixx,prd+ixx do -- search for minimum
+  22 : 		if i>=nmths then break end
+  23 : 		if ssd[i]<mx then mx,mtn,ixm = ssd[i],yyd[i],i end
+  24 : 		i = i+1
+  25 : 	end -- Now have minimum
+  26 : 	pn[k],mns[k],k = k,mtn,k+1
+  27 : 	ixx = ixx+ixm
+  28 : 	if i>=nmths then break end
+  29 : 	i = ixm
+  30 : end
+  31 : print('Number peaks and minima =',#pks,#mns)
+  32 : a1,a2 = clinear(pn,pks), clinear(pn,mns)
+  33 : print('solar cycle in years =',a1,a2)
+  34 : write_data('list7_2.dat',pks,mns,ssp)
+  35 : 

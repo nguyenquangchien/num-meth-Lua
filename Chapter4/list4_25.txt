@@ -1,0 +1,31 @@
+   1 :  --/* File list4_25.lua */ -- Several LU methods for solving linear equations
+   2 :  
+   3 : require"Matrix"; require"gauss"
+   4 : -- define some test matrices
+   5 : aa = Matrix.new{{2,1,1,3,2},{1,2,2,1,1},{1,2,9,1,5},{3,1,1,7,1},{2,1,5,1,8}}
+   6 : bb = Matrix.new{{-2},{4},{3},{-5},{1}}
+   7 : 
+   8 : a,b = aa:new(), bb:new() -- make copy of then
+   9 : print('Determinant of a = ',a:det(),'\n') -- Modifies a
+  10 : 
+  11 : a = aa:new() -- Need new copy 
+  12 : ainv = a^-1 -- One form of obtaining inverse
+  13 : print(ainv*b,'\n') -- #1 solve equation set
+  14 : 
+  15 : -- a and b are unchanged by above operations
+  16 : ainv = a:inv() -- Second form for inverse -- changes a matrix
+  17 : print(ainv*b,'\n') -- #2 solve equation set
+  18 : 
+  19 : a = aa:new() -- New copy for a, b is still unchanged
+  20 : fi = a:LUfunction() -- Function for solving with various b arrays
+  21 : sol = fi(b) -- #3 Call function for solution
+  22 : table.foreach(sol,print); print('\n') -- Solve and print results
+  23 : 
+  24 : a = aa:new() -- New copy for a, b is still unchanged
+  25 : sol = Matrix.LUsolve(a,b) -- #4 Another method of solving equation set
+  26 : table.foreach(sol,print); print('\n')
+  27 : 
+  28 : a = aa:new() -- New copy, b still unchanged
+  29 : b = {-2, 4, 3, -5, 1} -- Single table needed for gauss
+  30 : sol = gauss(a,b) -- #5 Gauss elimination, does not use LU 
+  31 : table.foreach(sol,print)

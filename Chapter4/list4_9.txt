@@ -1,0 +1,24 @@
+   1 : -- File list4_9.lua  -- Biasing of a BJT with newton()
+   2 : 
+   3 : require"nsolv"; require"newton"
+   4 : 
+   5 : Is,vt,B,Va = 1.e-16,.026,100,100 -- Basic transistor parameters
+   6 : Vcc,R1,R2,Rs,Rl = 15,20.e3,1.e3,200,2.e3 -- Basic circuit parameters
+   7 : VC = 7.5 -- Desired collector voltage
+   8 : 
+   9 : fbjt = function(i,v)
+  10 : 	local ib,ic = v[4],v[5] -- Keep definitions local to this function
+  11 : 	i[1] = v[1]/R2 + (v[1] - Vcc)/R1 + ib
+  12 : 	i[2] = v[2]/Rs -  ib - ic
+  13 : 	i[3] = (v[3]-Vcc)/Rl + v[5]
+  14 : 	i[4] = ib - Is*(math.exp((v[1] - v[2])/vt)-1)
+  15 : 	i[5] = ic - B*ib*(1 + (v[3] - v[2])/Va)
+  16 : end
+  17 : v = {0,0,0,0,0} -- Initial guesses, try other values?
+  18 : fc = function(R) -- Function for newton() call
+  19 : 	R2 = R; nsolv(fbjt,v) -- Use last values for v[]
+  20 : 	return v[3] - VC
+  21 : end
+  22 : R2 = newton(fc,R2)
+  23 : printf('Calculated resistor value = %d\n',R2)
+  24 : table.foreach(v,print)

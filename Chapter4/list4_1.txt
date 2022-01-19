@@ -1,0 +1,54 @@
+   1 : -- /* File gauss.lua */
+   2 : 
+   3 : gauss = function (a,b,n)
+   4 : 	n = n or #a
+   5 : 	local jret = 1
+   6 : 	if n < 2 then -- Low dimension matrix -- Special case
+   7 : 		if n<1 then return b,-1 end
+   8 : 		row = a[1]
+   9 : 		if row[1] ~= 0.0 then b[1]= b[1]/row[1] return b,1 end
+  10 : 		return b,-1
+  11 : 	end
+  12 : 	for i=1,n do  -- Find largest value in each row and divide row elements by largest value
+  13 : 		row,ap = a[i], 0.0
+  14 : 		for j=1,n do ap = max(ap,abs(row[j])) end -- ap = largest value
+  15 : 		if ap==0.0 then ap=1.0 end
+  16 : 		for j=1,n do row[j]=row[j]/ap end -- Divide by largest value
+  17 : 		b[i]=b[i]/ap
+  18 : 	end
+  19 : 		
+  20 : 	for j=1,n do -- Elimination for each row in matrix
+  21 : 		jp1,ap = j+1, 0.0
+  22 : 		for i=j,n do -- Find largest value in column j, going from row j to row n
+  23 : 			am = a[i][j]
+  24 : 			if abs(am) > abs(ap) then ap,imax = am,i end
+  25 : 		end -- At end ap = largest value in column j to be eliminated and imax has row number
+  26 : 		if abs(ap) <= eps then 
+  27 : 			jret=0 -- Probably singular matrix with no solution
+  28 : 			if ap==0.0 then return b,-2 end -- Singular matrix with no solution
+  29 : 		end
+  30 : 		if imax~=j then -- Swap rows of a and b
+  31 : 			a[imax],a[j],b[imax],b[j] = a[j],a[imax],b[j],b[imax]
+  32 : 		end
+  33 : 		row,b[j] = a[j],b[j]/ap
+  34 : 		for k=j,n do row[k] = row[k]/ap end 
+  35 : 		if j<n then -- Eliminate elements except for last row
+  36 : 			rowj=a[j] -- Selece row j values 
+  37 : 			for ix=jp1,n do -- Step rows from j+1 to row n
+  38 : 				row = a[ix]; rowij = row[j] -- Select row ix values
+  39 : 				for jx=jp1,n do -- Step columns from j+1 to column n
+  40 : 					row[jx]=row[jx]-rowij*rowj[jx] 
+  41 : 				end
+  42 : 				b[ix] = b[ix] - b[j]*rowij
+  43 : 			end
+  44 : 		end
+  45 : 	end
+  46 : 	for j=n-1,1,-1 do -- Back substitute from row n-1 to row 1
+  47 : 		for k=n,j+1,-1 do -- Known values from n to j
+  48 : 			b[j] = b[j] - a[j][k]*b[k]
+  49 : 		end
+  50 : 	end
+  51 : 	return jret
+  52 : end
+  53 : 		
+  54 : setfenv(gauss,{abs=(Complex or math).abs,max=math.max,eps=1.e-12})

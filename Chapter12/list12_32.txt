@@ -1,0 +1,36 @@
+   1 : -- File list12_32.lua --
+   2 : -- Example of capacitor with two dielectrics
+   3 : 
+   4 : require"pde2bv"
+   5 : 
+   6 : feqs = {
+   7 : 	function(x,y,uxx,ux,u,uy,uyy,i,j)
+   8 : 		if j==nt then ext = fyext*uy else ext = 0.0 end
+   9 : 		return uxx + uyy + ext
+  10 : 	end,
+  11 : 	function(x,u,uy,ux,i) return u end,
+  12 : 	function(x,u,uy,ux,i) return u-Vm end,
+  13 : 	function(y,u,ux,uy,j) return ux end,
+  14 : 	function(y,u,ux,uy,j) return ux end
+  15 : }
+  16 : 
+  17 : ep1, ep2 = 3, 12	
+  18 : Vm, xmax, ymax = 1.0, 1.0, 1.0
+  19 : Nx,Ny = 80,80
+  20 : nx,ny = Nx+1,Ny+1; nt = math.ceil(ny/2)
+  21 : x,y = setxy({0,xmax},{0,ymax},Nx,Ny)
+  22 : u = Spmat.new(nx,-ny) 
+  23 : for j = 1,ny do	-- Set zero initial values
+  24 : 	u[j] = {}; for i = 1,nx do u[j][i] = 0 end
+  25 : end
+  26 : fyext = 2*(ep2-ep1)/((ep2+ep1)*(y[nt]-y[nt-1]))
+  27 : 
+  28 : SPM,COE,SOR,ADI = 1, 2, 3, 4 -- 4 solution types 
+  29 : getfenv(pde2bvsor).nprint=1;getfenv(pde2bvcoe).nprint=1
+  30 : u,errm = pde2bv(feqs,x,y,u,SOR) -- Replace SOR as desired
+  31 : print('Dielectric change occurs at',nt)
+  32 : print(' At end maximum correction =',errm)
+  33 : ut = reversexy(u)
+  34 : splot(ut); cplot(ut); splot('list12_32a.emf',ut)
+  35 : write_data('list12_32a.dat',ut)
+  36 : 		

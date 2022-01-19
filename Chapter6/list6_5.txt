@@ -1,0 +1,60 @@
+   1 : -- /* File list6_5.lua */ -- Tests of interpolation functions
+   2 : 
+   3 : require"intp"; require"spline"; require"deriv"
+   4 : makeglobal(math) -- So we can use exp() in place of math.exp()
+   5 : 
+   6 : xd,yd = {},{} -- Arrays for tabular data
+   7 : f1 = function(x) return  exp(-x^2) end -- Five test functions
+   8 : f2 = function(x) return x*exp(-x) end
+   9 : f3 = function(x) return 1/(1+25*x^2) end
+  10 : f4 = function(x) return log(x) end
+  11 : f5 = function(x) return sin(x) end
+  12 : f1d = function(x) return -2*x*exp(-x^2) end
+  13 : f2d = function(x) return (1-x)*exp(-x) end
+  14 : f3d = function(x) return -50*x/(1+25*x^2)^2 end
+  15 : f4d = function(x) return 1/x end
+  16 : f5d = function(x) return cos(x) end
+  17 : -- Select function to test -- Change for different functions
+  18 : funct,functd,xmin,xmax,dx1,dx2 = f1,f1d,-2,2,0.5,0.01 -- f1 tests
+  19 : --funct,functd,xmin,xmax,dx1,dx2 = f2,f2d,0,5,.5,.01 -- f2 tests
+  20 : --funct,functd,xmin,xmax,dx1,dx2 = f3,f3d,-1,1,.25,.01 -- f3 tests
+  21 : --funct,functd,xmin,xmax,dx1,dx2 = f4,f4d,0.5,5,.5,.01 -- f4 tests
+  22 : --funct,functd,xmin,xmax,dx1,dx2 = f5,f5d,0,2*pi,.5,.01 -- f5 tests
+  23 : i,x = 1,xmin
+  24 : while x<=xmax+.001 do -- Define tabular data
+  25 : 	xd[i],yd[i] = x, funct(x)
+  26 : 	x,i = x + dx1, i+1
+  27 : end -- Select one of following two lines
+  28 : fintp,fspline = intpf(xd,yd), splinef(xd,yd)
+  29 : --fintp,fspline = intp4f(xd,yd), splinef(xd,yd); getfenv(spline).stype = 2
+  30 : 
+  31 : xi,y_lcb,y_csp,y_fun={},{},{},{} -- Tables for function and interpolated data
+  32 : y1_lcb,y1_csp,y1_fun,y2_lcb,y2_csp,y2_fun = {},{},{},{},{},{} -- Derivative values
+  33 : x = xmin; i = 1
+  34 : while x<=xmax+.001 do -- Generate interpolated data values
+  35 : 	xi[i] = x
+  36 : 	y_fun[i],y1_fun[i],y2_fun[i] = funct(x), functd(x), deriv(functd,x)
+  37 : 	y_lcb[i],y1_lcb[i],y2_lcb[i] = fintp(x), fintp(x,1), fintp(x,2)
+  38 : 	y_csp[i],y1_csp[i],y2_csp[i] = fspline(x), fspline(x,1),fspline(x,2)
+  39 : 	x = x+dx2; i = i+1
+  40 : end
+  41 : ndat = #xi
+  42 : er0lcb,er0csp,er1lcb,er1csp,er2lcb,er2csp = 0,0,0,0,0,0
+  43 : for i=1,ndat do -- Calculate average errors
+  44 : 	er0lcb = er0lcb + (y_fun[i] - y_lcb[i])^2
+  45 : 	er0csp = er0csp + (y_fun[i]-y_csp[i])^2
+  46 : 	er1lcb = er1lcb + (y1_fun[i]-y1_lcb[i])^2
+  47 : 	er1csp = er1csp + (y1_fun[i]-y1_csp[i])^2
+  48 : 	er2lcb = er2lcb + (y2_fun[i]-y2_lcb[i])^2
+  49 : 	er2csp = er2csp + (y2_fun[i]-y2_csp[i])^2
+  50 : end
+  51 : print("Average mean square errors are:")
+  52 : print("Functions, LCB, CSP = ",sqrt(er0lcb/ndat), sqrt(er0csp/ndat))
+  53 : print("First derivatives, LCB, CSP = ",sqrt(er1lcb/ndat),sqrt(er1csp/ndat))
+  54 : print("Second derivatives, LCB, CSP = ",sqrt(er2lcb/ndat),sqrt(er2csp/ndat))
+  55 : --write_data("intp_org.dat",xd,yd)
+  56 : write_data("list6_5.dat",xi,y_fun,y_lcb,y_csp,y1_fun,y1_lcb,y1_csp,
+  57 : 	y2_fun,y2_lcb,y2_csp,xd,yd)
+  58 : plot(xi,y_fun,y_lcb,y_csp)
+  59 : 
+  60 : 

@@ -1,0 +1,33 @@
+   1 : -- File list13_11.lua -- 2 dielectric capacitor
+   2 : 
+   3 : require'pde2fe' 
+   4 : 
+   5 : nts = {readnts('list13_11')}
+   6 : 
+   7 : Vm = 1.0
+   8 : ep1,ep2 = 3, 12
+   9 : feqs = {
+  10 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn)
+  11 : 		if mtn==1 then ep = ep1 
+  12 : 		else ep = ep2 end
+  13 : 		return ep*(uxx + uyy)
+  14 : 	end,
+  15 : 	function(nd,u,un,nbs,kb)
+  16 : 		if nbs==1 then return u -- Bottom boundary
+  17 : 		elseif nbs==3 then return u - Vm -- Top boundary
+  18 : 		else  return un end -- Sides 
+  19 : 	end 
+  20 : }	
+  21 : 
+  22 : getfenv(spgauss).nprint = 1
+  23 : getfenv(pde2fe).nprint = 1
+  24 : getfenv(pde2fe).linear = 1
+  25 : 
+  26 : u = pde2fe(feqs,nts)
+  27 : 
+  28 : x,y = {},{}; NT = 21
+  29 : for j=1,NT do y[j] = (j-1)/(NT-1); x[j] = 2*y[j] end
+  30 : sol = toxysol(u,x,y,nts[1],nts[2])
+  31 : 
+  32 : write_data('list13_11.dat',sol)
+  33 : splot(sol)

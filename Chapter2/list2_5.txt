@@ -1,0 +1,14 @@
+   1 : -- File list2.5 -- Complex numbers using Complex.lua
+   2 : 
+   3 : require"Complex" --Load Complex extensions
+   4 : Cnew = Complex.new
+   5 : 
+   6 : c1 = Cnew(3,5) -- Define complex numbers
+   7 : c2 = Cnew(2,8)
+   8 : 
+   9 : print(c1*c2); print(4*c1) -- Test math operations
+  10 : print(c1/c2); print(c1+c2); print(-c1+c2); print(j*c1)
+  11 : print(tostring(c1))
+  12 : print('sin =',Complex.sin(c1))
+  13 : print('sin =',c1:sin()); print('tan =',c1:tan())
+ 

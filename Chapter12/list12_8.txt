@@ -1,0 +1,36 @@
+   1 : -- /* File list12_8.lua */
+   2 : -- Programs to integrate nonlinear diffusion equation in one spatial variable
+   3 : 
+   4 : require"pdeivbv"; require'odebvfd'
+   5 : getfenv(pdeivbv).nprint = 1; getfenv(pdeivbvqs).nprint=1
+   6 : --getfenv(ode2bvfd).nprint=1 -- See detailed convergence
+   7 : 
+   8 : -- Model equations to be solved
+   9 : D00,D10,E0,E1 = 0.05, 0.95, 3.5, 3.5 -- Diffusion coeff parameters
+  10 : T = 1000+273 -- temperature
+  11 : D0sav = D00*math.exp(-E0/(0.026*T/300))
+  12 : D1sav = D10*math.exp(-E1/(0.026*T/300))
+  13 : ni = 7.14e18; L = 1.e-4 ; ul = 5e20; ur = 0; u = {}
+  14 : print('D0, D1 =',D0sav,D1sav)
+  15 : 
+  16 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  17 : 	D = D0 + D1*u[1]/ni
+  18 : 	fu[1] = ut[1] - D*upp[1] - D1*up[1]^2/ni
+  19 : end
+  20 : efl = function(fu,u,up) -- Left boundary 
+  21 : 	fu[1] = u[1] - ul 
+  22 : end
+  23 : efr = function(fu,u,up) -- Right boundary
+  24 : 	fu[1] = u[1] - ur  
+  25 : end
+  26 : 
+  27 : Nx = 200; Nt = 20 -- spatial steps, time steps
+  28 : x = xlg(0,L,L*1.e-4,Nx) -- Set up x and u arrays
+  29 : for i=1,Nx+1 do u[i] = 0.0 end; u[1] = ul 
+  30 : 
+  31 : D1=0; D0 = D0sav+D1sav*(ul/ni) -- Get initial trial solution
+  32 : pdeivbv({eq,efl,efr},{0,.001,1},x,u) -- Constant diffusion coeff
+  33 : D1=D1sav; D0 = D0sav -- Now real diffusion coeff
+  34 : sol = pdeivbvqs({eq,efl,efr},{0,{.01,1.e3},1,Nt},x,u)
+  35 : plot(sol[1],sol[#sol])
+  36 : write_data('list12_8.dat',sol)

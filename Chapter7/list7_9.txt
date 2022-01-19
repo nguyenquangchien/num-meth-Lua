@@ -1,0 +1,33 @@
+   1 : --/* File nlstsq.lua */
+   2 : 
+ 105 : newtonfc = function(f, x, ...) -- Newton's method for function with C coefficient array
+ 106 : 	-- Form of f must return f(x,c) = 0 when solution is found, x is an array of values,x[1] = solved value
+ 107 : 	local y,dy,fy,cy,ysave
+ 108 : 	if ylinear~=0 then -- Bypass Newton iterations if linear function in variable
+ 109 : 		y,x[1] = x[1],0.0 -- First variable is considered variable being solved for
+ 110 : 		fy = f(x, ...) -- f must be of the form --- return cal_val - x[1]
+ 111 : 		x[1] = y
+ 112 : 		return fy -- Return value of function
+ 113 : 	else
+ 114 : 		y = x[1] -- First variable is considered the variable we are solving for, x[1] has initial guess
+ 115 : 		ysave = y -- Save initial guess
+ 116 : 		for i=1,NT do -- Main Newton loop
+ 117 : 			dy = y*FACT
+ 118 : 			if dy==0.0 then dy = FACT end -- Increment variable
+ 119 : 			fy = f(x, ...)
+ 120 : 			x[1] = x[1] + dy
+ 121 : 			cy = fy - f(x, ...) -- Difference for derivative
+ 122 : 			if cy~=0.0 then cy = fy*dy/cy end -- Correction term using numerical derivative
+ 123 : 			y = y + cy -- New value of variable being solved for
+ 124 : 			x[1] = y; dy = abs(cy) + abs(y)
+ 125 : 			if dy==0.0 or abs(cy/dy)<ERR then break end -- Return if accuracy achieved
+ 126 : 		end
+ 127 : 		x[1] = ysave -- Restore initial guess, it might be a necessary data point
+ 128 : 		return y -- Rerurn solved value
+ 129 : 	end
+ 130 : end 
+ 131 : setfenv(nlstsq,{ERROR=5.e-4,FACT=1.e-8,NMAX=50,ERR=1.e-3,NT=50,
+ 132 : 	nprint=1,ylinear=0,abs=math.abs,sqrt=math.sqrt,flush=io.flush,
+ 133 : 	printf=printf,gauss=gauss,newtonfc=newtonfc,type=type,
+ 134 : 	minv=minv}) -- Set parameters for nlstsq()
+ 135 : setfenv(newtonfc,getfenv(nlstsq)) -- Same parameters for newtonfc()

@@ -1,0 +1,30 @@
+   1 : -- File list2.3 -- Simple code for implementing complex number operations
+   2 : 
+   3 : Cmp = {} -- Complex table
+   4 : mtcmp = { -- metatable for Complex numbers
+   5 : 	__add = function(c1,c2) -- Add two Complex numbers
+   6 : 		return Cmp.new(c1.r+c2.r, c1.i+c2.i)
+   7 : 	end,
+   8 : 	__sub = function(c1,c2) -- Subtract two Complex numbers
+   9 : 		return Cmp.new(c1.r-c2.r, c1.i-c2.i)
+  10 : 	end,
+  11 : 	__mul = function(c1,c2) -- Multiple two Complex numbers
+  12 : 		return Cmp.new(c1.r*c2.r-c1.i*c2.i, c1.i*c2.r+c2.i*c1.r)
+  13 : 	end,
+  14 : 	__div = function(c1,c2) -- Divide two Complex numbers
+  15 : 		local d = c2.r*c2.r+c2.i*c2.i
+  16 : 		return Cmp.new((c1.r*c2.r+c1.i*c2.i)/d, (c1.i*c2.r-c2.i*c1.r)/d)
+  17 : 	end,
+  18 : 	__unm = function(c1) -- Negative of complex number
+  19 : 		return Cmp.new(-c1.r, -c1.i)
+  20 : 	end,
+  21 : 	__tostring = function(c1)
+  22 : 		return '('..c1.r..') + j('..c1.i..')'
+  23 : 	end
+  24 : } -- End metatable functions
+  25 : Cmp.new = function(r,i) -- Define new complex number
+  26 : 	local c1 = {r = r, i = i}
+  27 : 	return setmetatable(c1, mtcmp)
+  28 : end
+  29 : 
+  30 : 

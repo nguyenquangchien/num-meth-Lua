@@ -1,0 +1,30 @@
+   1 : -- /* File list5_8.lua */ -- Simple integration 
+   2 : 
+   3 : function sintg(xmin,xmax,f)
+   4 : 	local n = 40
+   5 : 	local dx = (xmax-xmin)/n
+   6 : 	local sum = 0.5*(f(xmin)+f(xmax))
+   7 : 	for i=1,n-1 do sum = sum + f(xmin+i*dx) end
+   8 : 	return sum*dx
+   9 : end
+  10 : 
+  11 : fx = function(x) return 25*x^.5 end
+  12 : iv = sintg(0,4,fx)
+  13 : ivv = 25*4^1.5/1.5
+  14 : print(iv,ivv,(iv-ivv)/ivv)
+  15 : 
+  16 : fy = function(x) return 50*math.sin(x) end
+  17 : iv = sintg(0,4,fy)
+  18 : ivv = 50*(1-math.cos(4))
+  19 : print(iv,ivv,(iv-ivv)/ivv)
+  20 : 
+  21 : humps = function(x) -- Has 2 maxima and 1 minimum between 0 and 1
+  22 : 	return 1/((x-.3)^2+.01) + 1/((x-.9)^2+.04) -6
+  23 : end	
+  24 : iv = sintg(0,4,humps)
+  25 : ivv = 10*(math.atan(37)-math.atan(-3))+5*(math.atan(15.5)-
+  26 : 	math.atan(-4.5))-24
+  27 : print(iv,ivv,(iv-ivv)/ivv)
+  28 : 
+  29 : 
+  30 : 

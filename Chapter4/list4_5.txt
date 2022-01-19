@@ -1,0 +1,24 @@
+   1 : --File list4_5.lua -- Examples of use of nsolv()
+   2 : require "nsolv"
+   3 : 
+   4 : eqs1 = function(f,x)
+   5 : 	f[1] = x[1]^2 + 50*x[1] + x[2]^2 + x[3]^2 -200
+   6 : 	f[2] = x[1]^2 + 20*x[2] + x[3]^2 - 50
+   7 : 	f[3] = -x[1]^2 - x[2]^2 + 40*x[3] + 75
+   8 : end
+   9 : 
+  10 : x = {0,0,0} -- Initial guess
+  11 : nmx,a = nsolv(eqs1,x)
+  12 : print('For eqs1 : ',x[1],x[2],x[3])
+  13 : print('Number of iterations, error = ',nmx,a)
+  14 : 
+  15 : eqs2 = function(f,x)
+  16 : 	f[1] = x[1]*x[1] + math.exp(x[2]) + 1.0/x[3] - 41.
+  17 : 	f[2] = x[1] + 1./x[2] + x[3] - 6.
+  18 : 	f[3] = x[1]*x[1] - 24.0
+  19 : end
+  20 : x = {4,4,4}
+  21 : nmx,a = nsolv(eqs2,x)
+  22 : print('For eqs2 : ',x[1],x[2],x[3])
+  23 : print('Number of iterations, error = ',nmx,a)
+  24 : 

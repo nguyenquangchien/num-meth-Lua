@@ -1,0 +1,10 @@
+   1 : -- /* File list8_13.lua */
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : redwell,whitney = {},{} -- Two data sets for comparison
+   6 : read_data('redwell.txt',redwell)
+   7 : read_data('whitney.txt',whitney)
+   8 : plot({makeCDF(whitney)},{makeCDF(redwell)})
+   9 : 
+  10 : KS_test(redwell,whitney) -- K-S Distribution Test

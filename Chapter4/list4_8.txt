@@ -1,0 +1,29 @@
+   1 : -- File list4_8.lua  -- Program to analyze the biasing of a BJT 
+   2 : 
+   3 : require"nsolv"
+   4 : 
+   5 : Is,vt,B,Va = 1.e-16,.026,100,100 -- Basic transistor parameters
+   6 : Vcc,R1,R2,Rs,Rl = 15,20.e3,1.e3,200,2.e3 -- Basic circuit parameters
+   7 : 
+   8 : fbjt = function(i,v)
+   9 : 	local ib,ic = v[4],v[5] -- Keep definitions local to this function
+  10 : 	i[1] = v[1]/R2 + (v[1] - Vcc)/R1 + ib
+  11 : 	i[2] = v[2]/Rs -  ib - ic
+  12 : 	i[3] = (v[3]-Vcc)/Rl + v[5]
+  13 : 	i[4] = ib - Is*(math.exp((v[1] - v[2])/vt)-1)
+  14 : 	i[5] = ic - B*ib*(1 + (v[3] - v[2])/Va)
+  15 : end
+  16 : v = {0,0,0,0,0} -- Initial guesses
+  17 : Ra,vb,ve,vc,ib,ic = {},{},{},{},{},{} -- Tables to store results
+  18 : R2 = .1e3 -- Initial resistor value, zero causes problems with eqs
+  19 : i = 1
+  20 : while R2<=4e3 do
+  21 : 	nit,err = nsolv(fbjt,v) -- Use previous solution as guess
+  22 : 	if nit==NXX then print('Convergence error at i = ',i,err) end
+  23 : 	print(R2,v[3],v[5])		
+  24 : 	vb[i],ve[i],vc[i] = v[1], v[2], v[3]
+  25 : 	ib[i],ic[i],Ra[i] = v[4], v[5], R2
+  26 : 	i = i+1; R2 = R2 + .1e3
+  27 : end
+  28 : write_data("list4_8.dat",Ra,vb,ve,vc,ib,ic)
+  29 : plot(Ra,vc,ve)

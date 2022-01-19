@@ -1,0 +1,43 @@
+   1 : -- File list13_9.lua -- Example of time dependent BV problem in 2 dimensions 
+   2 : 
+   3 : require'pde2fe' -- Input FE code
+   4 : nts ={readnts('list13_9')} -- Get node, triangle, sides data
+   5 : print('Number of nodes, triangles =',#nts[1],#nts[2])
+   6 : Um = 1.0 -- Define equations to be solved
+   7 : D = 20 -- Constant diffusion coefficient
+   8 : xmax,ymax = 2.0,1.0
+   9 : feqs = { -- Table of functions
+  10 : 	function(x,y,t,uxx,ux,u,uy,uyy,ut,utt) -- General point
+  11 : 		return -ut + D*(uxx + uyy)
+  12 : 	end,
+  13 : 	function(nd,t,u,un,ut,utt,nbs)  -- Boundary values
+  14 : 		if nbs==3 then return u - Um 
+  15 : 		else return un end
+  16 : 	end
+  17 : }  -- End general point and boundary values
+  18 : 
+  19 : u = {}; for k=1,#nts[1] do u[k] = 0.0 end
+  20 : x,y = {},{}; NT = 41 -- Change as desired
+  21 : for j=1,NT do y[j] = ymax*(j-1)/(NT-1); x[j] = 2*y[j] end
+  22 : 
+  23 : SPM,COE,SOR = 1, 2, 3 -- 3 solution methods 
+  24 : t = os.time() -- Time results
+  25 : getfenv(pde2fe1tqs).nprint=1 -- Observe progress in time?
+  26 : --getfenv(pde2bvcoe).nprint=1 -- Observe COE convergence?
+  27 : getfenv(pde2fe).nprint=1 -- Observe Newton results?
+  28 : --getfenv(pde2fe1tqs).seeplot = {x,y} -- See popup plots?
+  29 : tvals = {0,{1.e-4,1.e-1},2,10, -- Spatial points for saving on next line
+  30 : 	{{0,.5},{0,1},{2,0},{2,.75},{2,1},{1,.5},{1,.75}}}
+  31 : u,uxyt,errm = pde2fe1tqs(feqs,tvals,nts,u,COE)
+  32 : 
+  33 : print('Time taken =',os.time()-t); io.flush()
+  34 : nsol = #u
+  35 : for i=1,nsol do -- Save 2D data files at saved times
+  36 : 	sfl = 'list13_9.'..i..'.dat'
+  37 : 	sol,solxy = toxysol(u[i],x,y,nts[1],nts[2]) -- to x-y arrays
+  38 : 	write_data(sfl,sol) -- Save x-y arrays
+  39 : 	if i==5 then -- Save popup plots at one time
+  40 : 		splot('list13_9a.emf',solxy); cplot('list113_9b.emf',solxy)
+  41 : 	end
+  42 : end
+  43 : write_data('list13_9a.dat',uxyt) -- Save time data

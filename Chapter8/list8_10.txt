@@ -1,0 +1,37 @@
+   1 : -- /* File list8_10.lua */
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : x,y = {},{}
+   6 : read_data('steel_yield.txt',y)	-- Change to read in any desired file
+   7 : nd = #y; ds = 'kpsi'
+   8 : -- Do 4-Plots
+   9 : for i=1,nd do x[i] = i end -- Generate run number
+  10 : plot(x,y) -- Run plot
+  11 : xx,yy = makeCDF(y) -- Generate distribution data
+  12 : xn,yn = normalCDF(y)
+  13 : plot(xx,yy,yn); write_data('list8_10.dat',xx,yy,yn) -- Distribution plot
+  14 : scatterplot(lag(y)) -- Lag plot
+  15 : xh,yh = hist(y,15); xph,yph = histnorm(y,15) 
+  16 : plot(xh,yh,yph) -- Histogram plot
+  17 : -- Do mean analysis with bounds
+  18 : m,std = stats(y)
+  19 : print('number of data points = ',nd); print('mean, std = ',engr(m,ds),engr(std,ds))
+  20 : stderr = std/math.sqrt(nd-1)
+  21 : probv = {.6827,.9545,.9,.95,.99,.999}
+  22 : for i=1,#probv do
+  23 : 	ts = ttable(nd-1,probv[i]); dm = ts*stderr
+  24 : 	print(engr(m-dm,ds)..' < mean <'..engr(m+dm,ds)..' at'..engr(100*probv[i])..'percent confidence level')
+  25 : end
+  26 : print(engr(m-stderr,ds)..' < mean <'..engr(m+stderr,ds)..' for standard error bounds ')
+  27 : print(engr(m-2*stderr,ds)..' < mean <'..engr(m+2*stderr,ds)..' for 2 standard error bounds ')
+  28 : -- Do std analysis with bounds
+  29 : stdf = std*math.sqrt(nd-1)
+  30 : for i=1,#probv do
+  31 : 	tchL,tchH = tchisq(nd-1,probv[i])
+  32 : 	varL,varH = stdf/math.sqrt(tchL),stdf/math.sqrt(tchH)
+  33 : 	print(engr(varH,ds)..' <   std  <'..engr(varL,ds)..' at'..engr(100*probv[i])..'percent confidence level')
+  34 : end
+  35 : fdf = 1/math.sqrt(2*nd)
+  36 : print(engr(std*(1-fdf),ds)..' <   std  <'..engr(std*(1+fdf),ds)..' for standard error bounds ')
+  37 : print(engr(std*(1-2*fdf),ds)..' <   std  <'..engr(std*(1+2*fdf),ds)..' for 2 standard error bounds ')

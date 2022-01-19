@@ -1,0 +1,41 @@
+   1 : -- File list13_17.lua -- Deflection of circular plate fixed at edges.
+   2 : 
+   3 : require'pde2fe' 
+   4 : L = 1.0 -- Radius of circular plate
+   5 : nts ={ readnts('list13_17')}
+   6 : nds,tri = nts[1], nts[2] -- Node data
+   7 : 
+   8 : E,dz,sig,q = 2e11, 0.01, 0.3, 3.36e4 -- Parameters
+   9 : D = E*dz^3/(12*(1-sig^2)); print('D = ',D)
+  10 : 
+  11 : feqs = {
+  12 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn)
+  13 : 		return uxx + uyy  - q/D
+  14 : 	end,
+  15 : 	function(nd,u,un,nbs)
+  16 : 		return u
+  17 : 	end
+  18 : }
+  19 : 
+  20 : getfenv(spgauss).nprint = 1; getfenv(pde2fe).nprint = 1
+  21 : getfenv(pde2fe).linear = 1 -- Observe progress
+  22 : uv = pde2fe(feqs,nts) -- Solve equations, using SPM
+  23 : 
+  24 : feqz = {
+  25 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn,nds,ltr)
+  26 : 		local n1,n2,n3 = nds[1],nds[2],nds[3]
+  27 : 		local l1,l2,l3 = ltr[1],ltr[2],ltr[3]
+  28 : 		return uxx + uyy  - (uv[n1]*l1+uv[n2]*l2+uv[n3]*l3)
+  29 : 	end,
+  30 : 	function(nd,u,un,nbs)
+  31 : 		return u
+  32 : 	end
+  33 : }
+  34 : z = pde2fe(feqz,nts) -- Try other solution methods?
+  35 : 
+  36 : x,y = {},{}; NT = 41 -- x,y grid for plotting results
+  37 : for j=1,NT do x[j] = 2*L*(j-1)/(NT-1)-L; y[j] = x[j] end
+  38 : sol = toxysol(uv,x,y,nds,tri); solx = toxysol(z,x,y,nds,tri)
+  39 : write_data('list13_17.dat',sol,solx)
+  40 : print('Maximum deflection =',intptri(z,nds,tri,{0,0}))
+  41 : splot(sol); splot(solx)

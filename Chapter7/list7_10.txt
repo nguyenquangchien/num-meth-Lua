@@ -1,0 +1,23 @@
+   1 :    -- /* File list7_10.lua */ -- First example of data fitting 
+   2 :    
+   3 :   require"nlstsq"
+   4 :   
+   5 :   xd,yd,i = {},{},1
+   6 :   for t=0,5,.1 do -- Generate some data
+   7 :   	xd[i],yd[i] = t, 2*(1-math.exp(-.8*t))
+   8 :   	i = i+1
+   9 :   end
+  10 :   
+  11 :   ft = function(x,c) -- Define function to fit data
+  12 :   	return c[1]*(1 - c[2]*math.exp(c[3]*x[2])) -x[1]
+  13 :   end
+  14 :   
+  15 :   c = {4,.5,-1} -- Initial guess at coefficients
+  16 :   actv,step = {1,1,1},{0,0,0} -- Set up arrays
+  17 :   nd,nx,nc = #xd,2,3
+  18 :   fw = {} -- Weighting factors 
+  19 :   for i=1,nd do fw[i] = 1 end
+  20 :   x = {yd,xd} -- Data values
+  21 :   del,err,nmax = nlstsq(x,fw,ft,c,actv,step) -- Call fiting 
+  22 :   print(err,nmax) -- print results
+  23 :   for i=1,nc do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end

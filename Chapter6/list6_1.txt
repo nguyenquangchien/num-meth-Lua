@@ -1,0 +1,27 @@
+   1 : -- /* File list6_1.lua */ -- Linear interpolation 
+   2 : 
+   3 : lintp = function(xd,yd,x,deriv) -- Linear interpolation with first derivative
+   4 : 	local n,y1,y2,x1,x2 = #xd
+   5 : 	while x>xd[il+1] and il<n-1 do il = il+1 end -- Find interval for x
+   6 : 	while x<xd[il] and il>1 do il = il-1 end
+   7 : 	y1,y2,x1,x2 = yd[il],yd[il+1],xd[il],xd[il+1]
+   8 : 	y2 = (y2-y1)/(x2-x1)
+   9 : 	if deriv==1 then return y2 end
+  10 : 	return y1 + y2*(x-x1)
+  11 : end
+  12 : setfenv(lintp,{deriv=0,il=1})
+  13 : 
+  14 : lintpf = function(xd,yd) -- Function with built-in data table
+  15 : 	local nd,xdd,ydd = #xd, {}, {} -- So user can't change data
+  16 : 	if xd[nd]<xd[1] then for i=1,nd do xdd[i] = xd[nd+1-i] end
+  17 : 	else for i=1,nd do xdd[i] = xd[i] end end
+  18 : 	for i=1,nd do ydd[i] = yd[i] end
+  19 : 	return function(x,deriv) return lintp(xdd,ydd,x,deriv) end
+  20 : end
+  21 : 	
+  22 : xd = {0,1,2,3,4,5}; yd = {3,4,4.5,4,3,2.5}
+  23 : print('value at x = 2.3 is',lintp(xd,yd,2.3))
+  24 : print('value at x = 5.5 is',lintp(xd,yd,5.5))
+  25 : ff = lintpf(xd,yd)
+  26 : print('value at x = 5.5 is',ff(5.5))
+  27 : 

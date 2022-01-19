@@ -1,0 +1,33 @@
+   1 : --/* file list4_14.lua */  -- FWHM waveform specifications 
+   2 : 
+   3 : require "nsolv"; require"deriv"
+   4 : exp = math.exp
+   5 : 
+   6 : t1,t2 = 5,50; t3,t4 = t1/1.25,t1/10
+   7 : eqs = function(f,c)
+   8 : 	t10,t90 = c[4],c[4]+t3
+   9 : 	tm,t51,t50 = c[5],c[6],c[6] + t2
+  10 : 	f[1] = fx(t10,c) -.1 -- 10% point, c[4] = time
+  11 : 	f[2] = fx(t90,c) -.9 -- 90% point c[4]+x3 = time
+  12 : 	f[3] = fx(t51,c) - .5 -- 50% point x51 = time
+  13 : 	f[4] = deriv(fx,tm,c) -- Derivative at peak = 0
+  14 : 	f[5] = fx(tm,c) -1 -- Peak value = 1 at c[5] = time
+  15 : 	f[6] = fx(t50,c) - .5 -- second 50% point
+  16 : end
+  17 : fx = function(t,c)
+  18 : 	return c[3]*(1-exp(-t/c[1]))*exp(-t/c[2])
+  19 : end
+  20 : 
+  21 : c = {t1/2,1.5*t2,1,t1/10,1.5*t1,t1/2}; nc = #c
+  22 : nn,err = nsolv(eqs,c,step)
+  23 : print('at ',t1,t2); print('Number of iterations, error = ',nn,err)
+  24 : for i=1,nc do printf('c[%d] = %12.4e\n',i,c[i]) end
+  25 : i = 1; xv,yv = {},{}
+  26 : for t = 0,100,.1 do
+  27 : 	xv[i],yv[i] = t, fx(t,c); 	i = i+1
+  28 : end
+  29 : plot(xv,yv); write_data('list4_14.dat',xv,yv)
+  30 : print('10% point at ',c[4],fx(c[4],c))
+  31 : print('90% point at',t3+c[4],fx(t3+c[4],c))
+  32 : print('peak point at',c[5],fx(c[5],c))
+  33 : print('50% points at',c[6],c[6]+t2,fx(c[6]+t2,c))

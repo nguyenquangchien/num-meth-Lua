@@ -1,0 +1,48 @@
+   1 : -- /* File odeiv.lua */
+   2 : -- Programs to integrate first order differential equations
+   3 : require"nsolv"; local atend
+   4 : 
+  65 : odeiv = function(feqs,tvals,u,up,upp) -- Multi Time Step Solver
+  66 : 	local sa,sb,tl,ns = {}
+  67 : 	local ntp,ni,nit,ntx 
+  68 : 	local NMAX,ND = getfenv(nsolv).NMAX,1000 -- 1000 default intervals
+  69 : 	up,upp = up or {},{}
+  70 : 	if type(tvals)=='number' then tvals = {0,tvals,0} end
+  71 : 	local j = #tvals
+  72 : 	if j==1 then tvals = {0,{tvals[1]},2*ND} end
+  73 : 	if j==2 then tvals[3] = 2*ND end
+  74 : 	if type(tvals[2])=='number' then tvals[2] = {tvals[2]} end
+  75 : 	ntp = #tvals[2]
+  76 : 	if type(tvals[3])=='table' then ns = tvals[3][1] else ns = tvals[3] end
+  77 : 	nit = 0
+  78 : 	for i=1,ntp do
+  79 : 		if i>1 then tl = tvals[2][i-1] else tl = tvals[1] end
+  80 : 		if type(tvals[3])=='table' then ns = tvals[3][i] or ns end
+  81 : 		sb,ni,ntx = odebiv(feqs,{tl,tvals[2][i],ns},u,up,upp)
+  82 : 		if ni==NMAX and ntx~=ns then 
+  83 : 			print("Error: Maximum number of iterations exceeded in nsolv")
+  84 : 			print("Results may not be accurate!"); print(tl,tvals[2][i],ns)
+  85 : 		end
+  86 : 		if ni>nit then nit = ni end
+  87 : 		if i>1 then sa = atend(sa,sb) else sa = sb end
+  88 : 	end
+  89 : 	return sa,nit
+  90 : end
+  91 : 
+  92 : odeivqs = function(feqs,tvals,u,up) -- ODE Quick Scan function
+  93 : 	local NPTS,NPS = 20,2
+  94 : 	local ttvals,nl,nu,fact = {},10
+  95 : 	local nt,j = #tvals,1
+  96 : 	if nt<2 then print('Error, must specify two times in obeivqs'); return end
+  97 : 	NPTS = floor(((tvals[3] or NPTS)+1)/2)
+  98 : 	nl = 10^(floor(log10(tvals[2][1])))
+  99 : 	nu = 10^(ceil(log10(tvals[2][2])))*1.000001
+ 100 : 	fact = 10^(1/NPTS)
+ 101 : 	ttvals[1],ttvals[2],ttvals[3],nl = nl,{},NPS,nl*fact
+ 102 : 	while nl<= nu do ttvals[2][j],nl,j = nl,nl*fact,j+1 end
+ 103 : 	ttvals[2][#ttvals[2]] = 10^(ceil(log10(tvals[2][2]))) -- Exact value at end
+ 104 : 	u,up = u or {},up or {} -- Linear steqs for first interval
+ 105 : 	odeiv(feqs,{tvals[1],ttvals[1],NPTS},u,up) -- NPTS points
+ 106 : 	return odeiv(feqs,ttvals,u,up)
+ 107 : end
+ 108 : setfenv(odeivqs,{floor=math.floor,ceil=math.ceil,log10=math.log10,odeiv=odeiv})

@@ -1,0 +1,35 @@
+   1 : -- /* File list7_25.lua */ -- Rational approximation to prob fumction
+   2 : require"intg"; require"nlstsq"
+   3 : 
+   4 : x1,y1,x2,y2 = {},{},{},{}
+   5 : f1 = function(x) return math.exp(-x^2/2) end -- Normal curve
+   6 : f2 = function(x) return f1(1/x)/x^2 end -- Folded normal curve
+   7 : x1[1],y1[1],i = 0,0,2
+   8 : for xi=.05,1.01,.05 do -- Integral from 0 to 1
+   9 : 	x1[i],y1[i] = xi, intg(xi-.05,xi,f1)/math.sqrt(2*math.pi)+y1[i-1]
+  10 : 	i = i+1
+  11 : end
+  12 : x2[1],y2[1],i = 1,y1[#x1],2
+  13 : for xi=.95,-.01,-.05 do -- Integral from 1 to infinity
+  14 : 	x2[i],y2[i] = xi, intg(xi,xi+.05,f2)/math.sqrt(2*math.pi)+y2[i-1]
+  15 : 	i = i+1
+  16 : end
+  17 : n = #x2; j = n+1
+  18 : for i=1,n do y1[i],y2[i] = .5*y1[i]/y2[n]+.5,.5*y2[i]/y2[n]+.5 end -- Exactly .5 max
+  19 : for i=2,n-1 do -- Combine results into table from x=0 to x=20
+  20 : 	x1[j],y1[j] = 1/x2[i],y2[i] 
+  21 : 	j = j+1
+  22 : end -- x1,y1 now contains P(x) values
+  23 : 
+  24 : fft = function(yx,c) -- Function to fit data
+  25 : 	x = yx[2]
+  26 : 	return 1. - 0.5/(1+c[1]*x+c[2]*x^2+c[3]*x^3+c[4]*x^4+
+  27 : 		c[5]*x^5+c[6]*x^6)^16 - yx[1]
+  28 : end
+  29 : 
+  30 : c = {0,0,0,0,0,0} -- Six possible coefficients
+  31 : yx = {y1,x1} -- Data values
+  32 : 
+  33 : del,err,nmax = nlstsq(yx,fw,fft,c) -- Call fiting
+  34 : print(err,nmax) -- print results
+  35 : for i=1,#c do printf('c[%d] = %14.6e +/- %12.4e\n',i,c[i],del[i]) end

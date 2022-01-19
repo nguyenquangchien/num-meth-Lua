@@ -1,0 +1,28 @@
+   1 : -- File list13_6.lua --
+   2 : 
+   3 : require'pde2fe' 
+   4 : 
+   5 : nts = {readnts('ex13.2')}
+   6 : 
+   7 : pi = math.pi; pi2 = 2*pi^2; sin = math.sin
+   8 : feqs = {
+   9 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn)
+  10 : 		return uxx + uyy  + pi2*(sin(pi*x)*sin(pi*y))
+  11 : 	end,
+  12 : 	function(nd,u,un,nbs)
+  13 : 		return u
+  14 : 	end
+  15 : }	
+  16 : 
+  17 : getfenv(spgauss).nprint = 1; getfenv(pde2fe).nprint=1
+  18 : getfenv(pde2fe).linear = 1
+  19 : 
+  20 : u = pde2fe(feqs,nts)
+  21 : --u = pde2fe(feqs,nts,_,3) -- Try approximate methods
+  22 : 
+  23 : x,y = {},{}; NT = 41
+  24 : for j=1,NT do x[j] = (j-1)/(NT-1); y[j] = x[j] end
+  25 : sol,solxy = toxysol(u,x,y,nts)
+  26 : 
+  27 : write_data('list13_6a.dat',sol); write_data('list13_6b.dat',solxy)
+  28 : splot(solxy); cplot(solxy)

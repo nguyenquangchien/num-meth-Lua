@@ -1,0 +1,105 @@
+   1 : --/*  File intp.lua */
+   2 : 
+   3 : intp = function(xp,yp,x,deriv,ypd) -- LCB -- Local cubic interpolation
+   4 : 	if type(deriv)=='table' then deriv,ypd = ypd, deriv end
+   5 : 	deriv = deriv or 0
+   6 : 	local n = #xp
+   7 : 	local x0,x1,x2,x3,y0,y1,y2,y3,c1,c2,c3,yp1,yp2
+   8 : 	if il>n-2 then il=n-2 end
+   9 : 	if n<3 then fprintf(stderr,
+  10 : 		'Number of points must be > 2 in intp.\n'); return nil
+  11 : 	end
+  12 : 	if xp[n]<xp[1] then 
+  13 : 		fprintf(stderr,"Array of x values in intp must be monotonic increasing\n")
+  14 : 		fprintf(stderr,"Change x values to negative values and try again\n")
+  15 : 	end
+  16 : 	-- Find appropriate interval for requested interpolation
+  17 : 	while x>xp[il] and il<n-1 do il = il+1 end
+  18 : 	while x<xp[il] and il>1 do il = il-1 end
+  19 : 	if ypd and ypd[il] then yp1 = ypd[il] 
+  20 : 	else -- must evaluate derivative at lower point
+  21 : 		if il==1 then 
+  22 : 			x0,x1,x2 = xp[1],xp[2],xp[3]
+  23 : 			y0,y1,y2 = yp[1],yp[2],yp[3]
+  24 : 			c1,c2,c3 = x1-x0,x2-x1,x2-x0
+  25 : 			yp1 = -y0*(c1+c3)/(c3*c1)+y1*c3/(c1*c2)-y2*c1/(c2*c3)
+  26 : 			x1,x2,y1,y2 = x0,x1,y0,y1
+  27 : 		else -- general point
+  28 : 			x0,x1,x2 = xp[il-1],xp[il],xp[il+1]
+  29 : 			y0,y1,y2 = yp[il-1],yp[il],yp[il+1]
+  30 : 			c1,c2,c3 = x1-x0,x2-x1,x2-x0
+  31 : 			yp1 = -y0*c2/(c1*c3)+y1*(c2-c1)/(c1*c2)+y2*c1/(c2*c3)
+  32 : 		end
+  33 : 		if ypd then ypd[il] = yp1 end -- Save if table available
+  34 : 	end
+  35 : 	if ydp and ypd[il+1] then yp2 = ypd[il+1]
+  36 : 	else -- must evaluate derivative at upper point
+  37 : 		if il==n-1 then 
+  38 : 			x1,x2,x3 = xp[n-2],xp[n-1],xp[n]
+  39 : 			y1,y2,y3 = yp[n-2],yp[n-1],yp[n]
+  40 : 			c1,c2,c3 = x3-x2,x2-x1,x3-x1
+  41 : 			yp2 = y1*c1/(c2*c3)-y2*c3/(c1*c2)+y3*(c1+c3)/(c1*c3)
+  42 : 			x1,x2,y1,y2 = x2,x3,y2,y3
+  43 : 		else -- general point
+  44 : 			x1,x2,x3 = xp[il],xp[il+1],xp[il+2]
+  45 : 			y1,y2,y3 = yp[il],yp[il+1],yp[il+2]
+  46 : 			c1,c2,c3 = x3-x2,x2-x1,x3-x1
+  47 : 			yp2 = -y1*c1/(c2*c3)+y2*(c1-c2)/(c1*c2)+y3*c2/(c1*c3)
+  48 : 		end
+  49 : 		if ypd then ypd[il+1] = yp2 end
+  50 : 	end
+  51 : 	c1,c2 = x2-x1,x-x1
+  52 : 	b = (3*(y2-y1)/c1 - 2*yp1 - yp2)/c1
+  53 : 	c = (yp2 + yp1 - 2*(y2-y1)/c1)/(c1*c1)
+  54 : 	if deriv==0 then return y1+((c*c2+b)*c2+yp1)*c2 end
+  55 : 	if deriv==1 then return yp1+(3*c*c2+2*b)*c2 end
+  56 : 	if deriv==2 then return 2*b+6*c*c2 end
+  57 : end
+  58 : setfenv(intp,{il=1,fprintf=fprintf,type=type})
+  59 : 
+  60 : intpf = function(xd,yd,nd) -- Embed data and convert to f(x)
+  61 : 	local xdd,ydd,ydrv = {},{},{} -- Store data locally
+  62 : 	nd = nd or #xd
+  63 : 	if xd[nd]<xd[1] then for i=1,nd do -- reverse data
+  64 : 		xdd[i],ydd[i] = xd[nd+1-i],yd[nd+1-i] end
+  65 : 	else for i=1,nd do 
+  66 : 		xdd[i],ydd[i] = xd[i],yd[i] end end
+  67 : 	return (function(x,drv) return intp(xdd,ydd,x,ydrv,drv) end)
+  68 : end
+  69 : 
+  70 : intpa = function(xyd,np) -- Interpolate on arrays of data
+  71 : 	local na,ndd = table.getn(xyd), table.getn(xyd[1])
+  72 : 	local xmin,xmax = xyd[1][1],xyd[1][ndd]
+  73 : 	if type(np)=='table' then xp,np = {np},table.getn(np)
+  74 : 	else
+  75 : 		xp,np = {{}},np+1
+  76 : 		for i=1,np do xp[1][i] = xmin + (i-1)*(xmax-xmin)/(np-1) end
+  77 : 	end
+  78 : 	for j=2,na do
+  79 : 		xp[j] = {}
+  80 : 		for i=1,np do xp[j][i] = intp(xyd[1],xyd[j],ndd,xp[1][i]) end
+  81 : 	end
+  82 : 	return xp
+  83 : end
+  84 : 
+  85 : lintp = function(x,y,xu,deriv) -- Linear interpolation with first derivative
+  86 : 	n = #x
+  87 : 	while xu>x[il+1] and il<n-1 do il = il+1 end
+  88 : 	while xu<x[il] and il>1 do il = il-1 end
+  89 : 	y1,y2,x1,x2 = y[il],y[il+1],x[il],x[il+1]
+  90 : 	if deriv==1 then return (y2-y1)/(x2-x1) end
+  91 : 	return y1 + (y2-y1)*(xu-x1)/(x2-x1)
+  92 : end		
+  93 : 
+  94 : lintpf = function(xd,yd)
+  95 : 	local xdd,ydd = {},{} -- So user can't change data
+  96 : 	local nd = #xd
+  97 : 	if xd[nd]<xd[1] then for i=1,nd do
+  98 : 		xdd[i],ydd[i] = xd[nd+1-i],yd[nd+1-i] end
+  99 : 	else for i=1,nd do 
+ 100 : 		xdd[i],ydd[i] = xd[i],yd[i] end end
+ 101 : 	return function(x,drv) return lintp(xdd,ydd,x,drv) end
+ 102 : end
+ 103 : 
+ 104 : setfenv(lintp,{il=1})	
+ 105 : 

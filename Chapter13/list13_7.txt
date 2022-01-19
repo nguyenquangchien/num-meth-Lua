@@ -1,0 +1,60 @@
+   1 : -- File pde2fe.lua -- Functions for 2D finite element analysis
+------ 
+ 170 : pde1stp2fe1t = function(feqs,tvals,nts,ua,tpsola,ut,utt) -- 2 spatial dimensions plus time PDE Solver
+ 171 : 	local j, neq, t, h, h2,h2sq,hs,hx,hy,hz -- Local variables for function
+ 172 : 	local un,unn,unew = {},{},{}
+ 173 : 	local jfirst,nit,nitt,errm = 0,0,0 -- Number of iterations
+ 174 : 	local neq = #nts[1]
+ 175 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+ 176 : 	local u = ua or {} -- Single arrays 	
+ 177 : 	ut = ut or {}; utt = utt or {}
+ 178 : 	-- Functions to add next time values and time derivatives 
+ 179 : 	local fpde,fbv = feqs[1], feqs[2]
+ 180 : 	feq = { -- Local functions to add time and time derivatives
+ 181 : 		function(x,y,uxx,ux,up,uy,uyy,nt,m,nds,lds) -- General spatial point
+ 182 : 		local ut,utt,n1,n2,n3,l1,l2,l3 -- Local coordinates and nodes
+ 183 : 			n1,n2,n3,l1,l2,l3 = nds[1],nds[2],nds[3],lds[1],lds[2],lds[3]
+ 184 : 			ut = (up - (un[n1]*l1+un[n2]*l2+un[n3]*l3))/h2 -- Interpolated un and unn
+ 185 : 			utt = (up - (unn[n1]*l1+unn[n2]*l2+unn[n3]*l3))/h2sq
+ 186 : 			return fpde(x,y,t,uxx,ux,up,uy,uyy,ut,utt,nt,m,nds,lds) -- With added time
+ 187 : 		end,
+ 188 : 		function(nd,u,und,nt,m) -- Boundary equations
+ 189 : 			local ut,utt = (u - un[nd])/h2, (u - unn[nd])/h2sq
+ 190 : 			return fbv(nd,t,u,und,ut,utt,nt,m) -- With added time
+ 191 : 		end
+ 192 : 	}
+ 193 : 	t = tmin -- Initial t value
+ 194 : 	hs = (tmax - t)/ntval -- Equal increments in t used, no adjusting step size
+ 195 : 	-- If initial derivative not specified, use Backwards differencing for first 4 points
+ 196 : 	if #ut~=neq then for m=1,neq do ut[m] = ut[m] or 0 end end -- Complete initial derivatives 
+ 197 : 	if #utt~=neq then for m=1,neq do utt[m] = 0 end
+ 198 : 		jfirst,h = 0,0.25*hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- Set to BD parameters
+ 199 : 	else -- Use TP or BD parameters
+ 200 : 		if bd~=false then jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- BD parameters
+ 201 : 		else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 202 : 	end
+ 203 : 	for k=1,ntval do -- Main loop for incrementing independent variable (t)
+ 204 : 		repeat -- Use backwards differencing for first interval with 4 sub intervals of size h/4
+ 205 : 			jfirst = jfirst+1
+ 206 : 			-- Set up yn, and ynn arrays and get ready to solve equations
+ 207 : 			for m=1,neq do
+ 208 : 				un[m] = u[m] + hx*ut[m] -- hx = 0 or h/2
+ 209 : 				unn[m] = u[m] + hy*ut[m] + hz*utt[m] -- hy=h, hz=0 or (h/2)^2
+ 210 : 				u[m] = u[m] + h*ut[m] -- Predicted value of u array
+ 211 : 			end
+ 212 : 			t = t + h -- Now increment t to next t value
+ 213 : 			-- Calculate new u values at next time step, new values are returned in u array
+ 214 : 			u,errm,nitt = pde2fe(feq,nts,u,tpsola) -- Solve PDE at time t
+ 215 : 			if nitt>nit then nit = nitt end -- Monitor maximun number of iterations
+ 216 : 			-- New derivative values, same function as in feq() 
+ 217 : 			for m=1,neq do ut[m],utt[m] = (u[m] - un[m])/h2,(u[m] - unn[m])/h2sq end
+ 218 : 		until jfirst>=4 -- End of first interval repeat using Backwards difference
+ 219 : 		if k==1 then 
+ 220 : 		if bd~=false then jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = h,h*h,h,0,0 -- BD parameters
+ 221 : 			else jfirst,h = 4,hs; h2,h2sq,hy,hx,hz = hs/2,h*h/4,h,h/2,h*h/4 end -- TP parameters
+ 222 : 		end
+ 223 : 		if nprint~=0 then print('Completed time =',t,' with correction',errm); io.flush() end
+ 224 : 	end -- End of main loop on t, now return solution array
+ 225 : 	return u,errm,nit
+ 226 : end -- End of pde1stp2fe1t
+ 227 : setfenv(pde1stp2fe1t,{table=table,pde2fe=pde2fe,print=print,io=io,bd=false,nprint=0})

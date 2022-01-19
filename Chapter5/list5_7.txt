@@ -1,0 +1,34 @@
+   1 : -- /* File list5_7.lua */ -- Constrained optimization
+   2 : 
+   3 : require"deriv"; require"nsolv"
+   4 : 
+   5 : xio = {1,2,-3,4,-5} -- minimum points
+   6 : f = function(x) -- Multi-variable function
+   7 : 	local fv = 0
+   8 : 	for i=1,nx do fv = fv + (x[i] - xio[i])^2 end
+   9 : 	return math.exp(fv)
+  10 : end
+  11 : gs = { -- Table of constraint functions
+  12 : 	function(x) return x[1]-x[2]-1 end, -- #1
+  13 : 	function(x) return x[3]+x[4] end, -- #2
+  14 : 	function(x) return x[4]+x[5] end -- #3
+  15 : }
+  16 : 
+  17 : nx,nl = #xio, #gs -- number variables and constraints
+  18 : x = {0,0,0,0,0,0,0,0} -- Initial guess at minimum
+  19 : dx = -.2; step = {dx,dx,dx,dx,dx,0,0,0} -- Limit steps
+  20 : 
+  21 : eqs = function(y,x) -- Equations to be solved
+  22 : 	local yv
+  23 : 	for i=1,nx do 
+  24 : 		yv = pderiv(f,x,i) 
+  25 : 		for j=1,nl do yv = yv + x[nx+j]*pderiv(gs[j],x,i) end
+  26 : 		y[i] = yv
+  27 : 	end
+  28 : 	for i=1,nl do y[nx+i] = gs[i](x) end
+  29 : end
+  30 : 
+  31 : print(nsolv(eqs,x,step)) -- Now solve them
+  32 : print('Solution values are:')
+  33 : table.foreach(x,print) -- Print minimum point
+  34 : print('Value at solution =',f(x))

@@ -1,0 +1,16 @@
+   1 : -- /* list11_17.lua */
+   2 : -- Solution of nonlinear BV problem with non-uniform spatial grid
+   3 : require"odebvfd"
+   4 : 
+   5 : x = xlg(0,1,1.e-6,2000) -- Log distribution -- Try others below
+   6 : --x = xgp(0,1,1.e-6,2000) -- Geometric distribution
+   7 : --x = xll(0,1,1.e-6,2000) -- Log-log distribution
+   8 : 
+   9 : f = function(x,y,yp,ypp) -- Differntial equation
+  10 : 	return ypp + 4*yp^2
+  11 : end
+  12 : 
+  13 : u,nn,err1,err2 = ode1fd(f,x,{0,2}) -- Solve equation
+  14 : 
+  15 : print(nn,err1,err2) -- # Newton iterations and errors
+  16 : plot(u); write_data('list11_17.dat',u)

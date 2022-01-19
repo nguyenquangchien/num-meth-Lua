@@ -1,0 +1,52 @@
+   1 : -- /* File Matrix.lua */
+   2 : -- Package for Matrix algebra and functions -- Restricted to 2 dimensional matrices
+....
+ 182 : function Matrix.LUbsolve(a,indx,bb) -- Solve system of equations by LU
+ 183 : 	local n,ii,ip,sum = #bb,0
+ 184 : 	local b = {} -- bb can be a column matrix or a row vector
+ 185 : 	if type(bb[1])=='table' then for i=1,n do b[i]  = bb[i][1] end
+ 186 : 	else b = bb end
+ 187 : 	for i=1,n do -- Main loop, Forward substitution
+ 188 : 		ip = indx[i];	sum,b[ip] = b[ip],b[i]
+ 189 : 		if ii~=0 then for j=ii,i-1 do sum = sum - a[i][j]*b[j] end
+ 190 : 		else if sum~=0 then ii = i end end
+ 191 : 		b[i] = sum
+ 192 : 	end
+ 193 : 	for i=n,1,-1 do -- Main loop, Backward substitution
+ 194 : 		sum = b[i]
+ 195 : 		for j=i+1,n do sum = sum - a[i][j]*b[j] end
+ 196 : 		b[i] = sum/a[i][i]
+ 197 : 	end
+ 198 : 	return b -- Solution set
+ 199 : end
+ 200 : 
+ 201 : function Matrix.LUfunction(a,n) -- Return function to solve equations
+ 202 : 	-- by LU decomposition -- stores LU martix locally
+ 203 : 	local a,indx = Matrix.LUdecompose(a,n)
+ 204 : 	return function(b) return Matrix.LUbsolve(a,indx,b) end
+ 205 : end
+ 206 : 
+ 207 : function Matrix.LUsolve(a,b) -- Solve by LU decomposition
+ 208 : 	local a,indx = Matrix.LUdecompose(a)
+ 209 : 	return Matrix.LUbsolve(a,indx,b)
+ 210 : end
+ 211 : 
+ 212 : function Matrix.inv(m)
+ 213 : 	local n,b = #m, {}
+ 214 : 	local mc,ai = Matrix.new(m),Matrix.new(n,n)
+ 215 : 	local fi = Matrix.LUfunction(mc,n)
+ 216 : 	for i=1,n do
+ 217 : 		for j=1,n do b[j] = 0 end
+ 218 : 		b[i] = 1
+ 219 : 		b = fi(b)
+ 220 : 		for j=1,n do ai[j][i] = b[j] end
+ 221 : 	end
+ 222 : 	return ai
+ 223 : end
+ 224 : 
+ 225 : function Matrix.det(a,n) -- Determinant of matrix.
+ 226 : 	n = n or #a
+ 227 : 	local a,indx,d = Matrix.LUdecompose(a,n)
+ 228 : 	for i=1,n do d = d*a[i][i] end
+ 229 : 	return d
+ 230 : end

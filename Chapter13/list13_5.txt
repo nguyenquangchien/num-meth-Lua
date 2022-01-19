@@ -1,0 +1,39 @@
+   1 : -- File pde2fe.lua -- Functions for 2D finite element analysis
+-----
+ 134 : pde2fe = function(feqs,nts,u,tpsola) -- 2 spatial dimensions PDE Solver
+ 135 : 	u = u or {}
+ 136 : 	if type(tpsola)~='table' then tpsola = {tpsola} end
+ 137 : 	local tpsol,rx,ry = tpsola[1] or SPM, tpsola[2], tpsola[3] -- Default to sparse matrix solution
+ 138 : 	local umx,errm,krrm,a,b,uxy = 0.0
+ 139 : 	local uold,ua,n,itmx = {}, {}, #nts[1], 0
+ 140 : 	if #u~=n then for k=1,n do u[k] = u[k] or 0.0 end end
+ 141 : 	if linear==1 then nnmx=1 else nnmx=NMX end -- One Newton cycle for linear eqns
+ 142 : 	for k=1,n do uold[k],umx,ua[k] = u[k], max(umx,u[k]), 0.0 end
+ 143 : 	for int=1,nnmx do
+ 144 : 		a,b = setup2feeqs(feqs,nts,uold)
+ 145 : 		if tpsol==SPM then -- Solve with spgauss, sparse matrix solver
+ 146 : 			spgauss(a,b); ua = b -- b is new solution
+ 147 : 		elseif tpsol==COE then -- Solve with Chebychev odd/even SOR
+ 148 : 			if rx==nil then rx = cos(pi/sqrt(n)) end
+ 149 : 			ua = pde2bvcoe(a,b,ua,rx,umx)
+ 150 : 		elseif tpsol==SOR then -- Solve with SOR
+ 151 : 			if rx==nil then rx = cos(pi/sqrt(n)) end
+ 152 : 			ua = pde2bvsor(a,b,ua,rx,umx)
+ 153 : 		else
+ 154 : 			print('Unknown solution method specified in pde2fe.'); break
+ 155 : 		end
+ 156 : 		errm,krrm,umx,itmx = 0.0,0,0.0,itmx+1
+ 157 : 		for k=1,n do errm,uold[k] = max(errm,abs(ua[k])), uold[k]+ua[k] end
+ 158 : 		for k=1,n do umx,ua[k] = max(umx,abs(uold[k])), 0.0 end
+ 159 : 		if nprint~=0 then print('Completed Newton iteration',int,'with correction',errm)
+ 160 : 			io.flush() end
+ 161 : 		if abs(errm)<ERR*umx then itmx = int; break end
+ 162 : 	end
+ 163 : 	if itmx==NMX then print('Maximum number of iterations exceeded in pde2fe!!')
+ 164 : 		io.flush() end
+ 165 : 	return uold,errm,itmx
+ 166 : end
+ 167 : setfenv(pde2fe,{spgauss=spgauss,max=math.max,cos=math.cos,pi=math.pi,sqrt=math.sqrt,
+ 168 : abs=math.abs,table=table,setup2feeqs=setup2feeqs,pde2bvcoe=pde2bvcoe,
+ 169 : pde2bvsor=pde2bvsor,linear=0,SPM=1,COE=2,SOR=3,NMX=20,ERR=1.e-4,print=print,
+ 170 : type=type,nprint=0,io=io,Spmat=Spmat,})

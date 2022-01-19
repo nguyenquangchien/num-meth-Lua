@@ -1,0 +1,23 @@
+   1 : -- /* File list8_5.lua */  Analysis of data for paper thickness
+   2 : 
+   3 : require"prob"
+   4 : 
+   5 : x,y = {},{}
+   6 : read_data('paper.txt',y)
+   7 : nd = #y
+   8 : for i=1,nd do x[i] = i end
+   9 : plot(x,y)
+  10 : m,std,var,skew = stats(y)
+  11 : print('mean,std,variance,skew = ',m,std,var,skew)
+  12 : xx,yy = makeCDF(y)
+  13 : xn,yn = normalCDF(y)
+  14 : plot(xx,yy,yn)
+  15 : xl,yl = lag(y)
+  16 : scatterplot(xl,yl)
+  17 : xh,yh = hist(y,20)
+  18 : xph,yph = histnorm(y,20)
+  19 : plot(xh,yh,yph)
+  20 : write_data('list8_5a.dat',x,y,xx,yy,yn)
+  21 : write_data('list8_5b.dat',xl,yl)
+  22 : write_data('list8_5c.dat',xh,yh,yph)
+  23 : 

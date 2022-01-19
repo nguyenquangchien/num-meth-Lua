@@ -1,0 +1,40 @@
+   1 : -- File list13_24.lua -- Vibration of circular membrane.
+   2 : 
+   3 : require'pde2fe' ; require'elemfunc'
+   4 : L = 1.0 -- Radius of circular plate
+   5 : nts ={ readnts('list13_17')}
+   6 : nds,tri = nts[1], nts[2] -- Node data
+   7 : 
+   8 : C = 1; Csq = C^2-- Velocity -- change as desired
+   9 : gm = 0.0 -- damping coefficient
+  10 : --gm = .2 -- change as desired
+  11 : x,y = {},{}; NT = 41
+  12 : for j=1,NT do x[j] = 2*L*(j-1)/(NT-1)-L; y[j] = x[j] end
+  13 : 
+  14 : feqs = {
+  15 : 	function(x,y,t,uxx,ux,u,uy,uyy,ut,utt)
+  16 : 		return uxx + uyy  - utt/Csq - gm*ut/C -- Wave equation in 2D
+  17 : 	end,
+  18 : 	function(nd,t,u,un,ut,utt) -- Boundary value
+  19 : 		return u
+  20 : 	end
+  21 : }
+  22 : 
+  23 : u = {}
+  24 : for k=1,#nds do
+  25 : 	r = math.sqrt(nds[k][1]^2+nds[k][2]^2)
+  26 : 	u[k] = elemfunc.J0(5.52008*r) -- Use Bessel function 
+  27 : end
+  28 : SPM,COE,SOR = 1, 2, 3 -- 3 solution methods
+  29 : getfenv(pde2fe1t).nprint=1
+  30 : getfenv(pde2fe).linear = 1
+  31 : tvals = {0,8,200,1,{{0,0},{.5,0},{-.5,0},{.5,.5},{-.5,-.5},{.75,0},{0,.75}}}
+  32 : u,uxyt = pde2fe1t(feqs,tvals,nts,u,COE)
+  33 : 
+  34 : nsol = #u
+  35 : for i=1,nsol,10 do -- Save 2D data files
+  36 : 	sfl = 'list13_24.'..(1+(i-1)/10)..'.dat'
+  37 : 	sol,solxy = toxysol(u[i],x,y,nts[1],nts[2])
+  38 : 	write_data(sfl,sol); splot(sol)
+  39 : end
+  40 : write_data('list13_24a.dat',uxyt)

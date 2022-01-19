@@ -1,0 +1,41 @@
+   1 : -- File list13_16.lua -- Deflection of square plate fixed at edges.
+   2 : 
+   3 : require'pde2fe' 
+   4 : L = 2.0 -- Scale length to 2 by 2
+   5 : nts ={ readnts('list13_15',L)} -- Square area with 2996 nodes
+   6 : nds,tri = nts[1], nts[2] -- Node data
+   7 : 
+   8 : E,dz,sig,q = 2e11, 0.01, 0.3, 3.36e4
+   9 : D = E*dz^3/(12*(1-sig^2)); print('D = ',D)
+  10 : 
+  11 : feqs = {
+  12 : 	function(x,y,uxx,ux,u,uy,uyy)
+  13 : 		return uxx + uyy  - q/D
+  14 : 	end,
+  15 : 	function(nd,u,un,nbs)
+  16 : 		return u
+  17 : 	end
+  18 : }
+  19 : 
+  20 : getfenv(spgauss).nprint = 1; getfenv(pde2fe).nprint = 1
+  21 : getfenv(pde2fe).linear = 1 -- Saves Newton iterations
+  22 : 
+  23 : uv = pde2fe(feqs,nts) -- Solve equations for uz
+  24 : 
+  25 : feqz = {
+  26 : 	function(x,y,uxx,ux,u,uy,uyy,ntr,mtn,nds,ltr)
+  27 : 		local n1,n2,n3 = nds[1],nds[2],nds[3]
+  28 : 		local l1,l2,l3 = ltr[1],ltr[2],ltr[3]
+  29 : 		return uxx + uyy  - (uv[n1]*l1+uv[n2]*l2+uv[n3]*l3)
+  30 : 	end,
+  31 : 	function(nd,u,un,nbs)
+  32 : 		return u
+  33 : 	end
+  34 : }
+  35 : z = pde2fe(feqz,nts) -- Solve for deflection
+  36 : 
+  37 : x,y = {},{}; NT = 41 -- x - y grid for plotting
+  38 : for j=1,NT do x[j] = L*(j-1)/(NT-1); y[j] = x[j] end
+  39 : sol = toxysol(uv,x,y,nds,tri); solx = toxysol(z,x,y,nds,tri)
+  40 : write_data('list13_16.dat',sol,solx)
+  41 : splot(sol); splot(solx)

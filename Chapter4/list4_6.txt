@@ -1,0 +1,14 @@
+   1 : -- File list4_6.lua -- Using nsolv() with linear equations
+   2 : require "nsolv"
+   3 : 
+   4 : lineqs = function(f,x)
+   5 : 	f[1] = 10*x[1] - 7*x[2] - 7
+   6 : 	f[2] = -3*x[1] + 2*x[2] + 6*x[3] - 4
+   7 : 	f[3] = 5*x[1] - x[2] + 5*x[3] -6
+   8 : end
+   9 : 
+  10 : x = {0,0,0} -- Initial guess
+  11 : getfenv(nsolv).linear = true -- Linear set
+  12 : nmx,a = nsolv(lineqs,x)
+  13 : print('For lineqs : ', x[1], x[2], x[3])
+  14 : print('Number of iterations, error = ',nmx,a)

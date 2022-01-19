@@ -1,0 +1,26 @@
+   1 : -- /* File list10_9.lua */
+   2 : -- Programs to integrate first order diff. equation using odeiv()
+   3 : require"odeiv"
+   4 : 
+   5 : f1 = function(eqs,t,y,yp) -- test of stiff differential eqns
+   6 : 	eqs[1] = yp[1] + 1001*y[1] - 999*y[2]
+   7 : 	eqs[2] = yp[2] - 999*y[1] + 1001*y[2]
+   8 : end
+   9 : 
+  10 : s1 = odeiv(f1,{0,{1.e-4,1.e-3,1.e-2,0.1,1,10},400},{0,2}); plot(s1)
+  11 : --s1 = odeivqs(f1,{0,{1.e-6,1.e3},400},{0,2}); plot(s1)-- Optional
+  12 : st1,st2 = {},{}
+  13 : nd = #s1[1]
+  14 : err,terr = 0,0
+  15 : exp,abs = math.exp,math.abs
+  16 : for i=1,nd do 
+  17 : 	time = s1[1][i]
+  18 : 	st1[i] = exp(-2*time)-exp(-2000*time)
+  19 : 	st2[i] = exp(-2*time)+exp(-2000*time)
+  20 : 	err1 = abs(st1[i] - s1[2][i])
+  21 : 	if err1 > err then err,terr = err1,time end
+  22 : 	err1 = abs(st2[i] - s1[3][i])
+  23 : 	if err1 > err then err,terr = err1,time end
+  24 : end
+  25 : print('Maximum error is ',err,' and occurs at time ',terr)
+  26 : write_data("list10.9_dat",s1,st1,st2)

@@ -1,0 +1,33 @@
+   1 : -- /* File list8_15.lua */ -- Weibull distribution analysis
+   2 : 
+   3 : require"prob"; require"nlstsq"
+   4 : 
+   5 : qbd,F = {},{}
+   6 : read_data('qbd.dat.txt',qbd,F) -- Data in form of F already
+   7 : nd = #qbd
+   8 : 
+   9 : Fwloglog = function(x,c) -- log-log Weibull function
+  10 : 	local xx = x[2] - c[3]
+  11 : 	if xx<0 then return -55 -x[1] end
+  12 : 	return c[1]*math.log(xx) - c[2] - x[1]
+  13 : end
+  14 : 
+  15 : xx,yy = {},{}
+  16 : for i=1,nd do -- Convert F values to log-log Weibull data
+  17 : 	xx[i] = qbd[i]
+  18 : 	yy[i] = math.log(-math.log(1-F[i]))
+  19 : end
+  20 : 
+  21 : c = {4,xx[nd]/2,xx[1]/2} -- Initial guesses
+  22 : del,err,nn = nlstsq({yy,qbd}, fw, Fwloglog, c); print('Number of Newton steps =',nn)
+  23 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  24 : print('m,s,mu = ',c[1],math.exp(c[2]/c[1]),c[3])
+  25 : 
+  26 : xp,yp = {},{}
+  27 : xs = {0,0}
+  28 : for i=1,nd do -- Theoretical Weibull function 
+  29 : 	xp[i] = math.log(qbd[i])
+  30 : 	yp[i] = Fwloglog({0,qbd[i]},c)
+  31 : end
+  32 : scatterplot(xp,yp,yy)
+  33 : write_data('list.8_15.dat',qbd,yy,yp)

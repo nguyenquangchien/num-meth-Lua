@@ -1,0 +1,23 @@
+   1 : -- /* File list10_8.lua */
+   2 : -- Programs to integrate first order diff. equation using odeivqs()
+   3 : require"odeiv"
+   4 : 
+   5 : f1 = function(eqs,t,y,yp) -- test of stiff differential eqns
+   6 : 	eqs[1] = yp[1] + 1001*y[1] - 999*y[2]
+   7 : 	eqs[2] = yp[2] - 999*y[1] + 1001*y[2]
+   8 : end
+   9 : f2 = function(eqs,t,y,yp) -- test of sinusoidal equation
+  10 : 	eqs[1] = yp[1] - y[2]
+  11 : 	eqs[2] = yp[2] + y[1]
+  12 : end
+  13 : mu = 20
+  14 : f3 = function(eqs,t,y,yp) -- test of Van der Pol equation
+  15 : 	eqs[1] = yp[1] - y[2]
+  16 : 	eqs[2] = yp[2] - mu*(1 - y[1]^2)*y[2] + y[1]
+  17 : end
+  18 : 
+  19 : s1 = odeivqs(f1,{0,{1.e-5,1e3}},{0,2}); plot(s1)
+  20 : s2 = odeivqs(f2,{0,{1.e-5,1e3}},{1,0}); plot(s2)
+  21 : s3 = odeivqs(f3,{0,{1.e-5,1e3}},{1,0}); plot(s3)
+  22 : 
+  23 : write_data("list10_8.dat",s1,s2,s3)

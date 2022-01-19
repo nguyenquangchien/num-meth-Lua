@@ -1,0 +1,46 @@
+   1 : --/* File list7_4.lua */ -- Test of Fourier functions
+   2 : 
+   3 : require"Fourier"
+   4 : fsqw = function(t) -- Square wave 
+   5 : 	if t<.5 then return 1
+   6 : 	else return 0 end
+   7 : end
+   8 : frsw = function(t) -- Rectified sin() wave
+   9 : 	if t<.5 then return natg,sub(2*math.pi*t)
+  10 : 	else return 0 end
+  11 : end
+  12 : fstooth = function(t) -- Saw-tooth wave
+  13 : 	if t<.5 then return math.pi*2*t
+  14 : 	else return 0 end
+  15 : end
+  16 : fstooth2 = function(t) -- Full period saw-tooth wave
+  17 : 	if t<.5 then return 2*t
+  18 : 	else return 2*(t-1) end
+  19 : end
+  20 : 	
+  21 : ft = fsqw
+  22 : --ft = frsw
+  23 : --ft = fstooth
+  24 : --ft = fstooth2
+  25 : 
+  26 : dt,nt = 1/1024, 1024
+  27 : fd,ta = {}, {}
+  28 : for i=1,nt do
+  29 : 	fd[i] = ft(dt*(i-1))
+  30 : 	ta[i] = (i-1)/512
+  31 : end
+  32 : 
+  33 : plot(ta,fd,{'Function of time','Time values','Function Values'})
+  34 : fx,fy,fz = Fourier(ft,0,1,40) -- Get first 40 Fourier Coefficients
+  35 : print(fx) -- Print Cos-Ang coefficients
+  36 : plotFourier(fx) -- Plot Cos-Ang coefficients
+  37 : fcm,fca = {},{} -- Collect Fourier coefficients into tables
+  38 : for i=1,#fx do fcm[i],fca[i] = fx[i][1],fx[i][2] end 
+  39 : write_data('list7_4a.dat',fcm,fca)
+  40 : 
+  41 : tt,fft = iFourier(fy,nt,10) -- Inverse Fourier transform 
+  42 : plot(tt,fft,fd) -- Plot original signal and inverse transform
+  43 : write_data('list7_4b.dat',tt,fft,fd)
+  44 : xx,yy = expandFt(fft,-1e-4,2.e-4) -- Expand to 3 cycles of waveform
+  45 : plot(xx,yy) -- plot 3 cycles of wave
+  46 : write_data('list7_4c.dat',xx,yy)

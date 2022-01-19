@@ -1,0 +1,35 @@
+   1 : -- /* File elemfunc.lua */ -- Some definitions of elementary functions
+   2 : -- Probability function, Error function, Complementary Error function, Gamma function
+   3 : 
+   4 : elemfunc = {} -- Table for elementary functions
+   5 : local pp = function(x) -- Function used by Pn,Qn
+   6 : 	return 0.5*(((((((.0000053830*x + .0000488906)*x + .0000380036)*x +
+   7 : 		.0032776263)*x + .0211410061)*x + .0498673470)*x + 1)^-16)
+   8 : end
+   9 : elemfunc.Pn = function(x) -- Probability function (~7 digits of accuracy)
+  10 : 	if x>=0 then return 1.0 - pp(x)
+  11 : 	else return pp(-x) end
+  12 : end
+  13 : elemfunc.Qn = function(x) -- 1-P(x) (~7 digits of accuracy)
+  14 : 	if x>=0 then return pp(x)
+  15 : 	else return 1.0-pp(-x) end
+  16 : end
+  17 : 
+  18 : elemfunc.erf = function(x) -- Error function (~7 digits of accuracy)
+  19 : 	local sgn = 1; if x<0 then x,sgn = math.abs(x), -1 end
+  20 : 	return sgn*(1-((((((.0000430638*x + .0002765672)*x + .0001520143)*x + 
+  21 : 		.0092705272)*x + .0422820123)*x + .0705230784)*x + 1)^-16)
+  22 : end
+  23 : elemfunc.erfc = function(x) return 1-elemfunc.erf(x) end -- Complementary Error function
+  24 : 
+  25 : elemfunc.gamma = function(x) -- Gamma function (x-1)! (~7 digits of accuracy)
+  26 : 	local ans,sign,fac=1,1,1
+  27 : 	if x<0 then sign,fac,x = -1, math.pi/(x*math.sin(-math.pi*x)), -x end
+  28 : 	if x<1 then ans,x = ans/x, x+1 end
+  29 : 	x = x-1
+  30 : 	while x>1 do ans,x = ans*x, x-1 end
+  31 : 	ans = ans*((((((((.035868343*x - .193527818)*x + .482199394)*x - .756704078)*x +
+  32 : 		.918206857)*x - .897056937)*x + .988205891)*x - .577191652)*x + 1)
+  33 : 	if sign>0 then return ans*fac
+  34 : 	else return fac/ans end
+  35 : end

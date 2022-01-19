@@ -1,0 +1,53 @@
+   1 : -- File list12_33.lua --
+   2 : -- Example of square corner resistor
+   3 : 
+   4 : require"pde2bv"
+   5 : 
+   6 : feqs = {
+   7 : 	function(x,y,uxx,ux,u,uy,uyy,i,j)
+   8 : 		ext = 0
+   9 : 		if i==nxmid then 
+  10 : 			if j<=nymid then ext = fxext*ux end
+  11 : 		end
+  12 : 		if j==nymid then
+  13 : 			if i<=nxmid then ext = ext + fyext*uy end
+  14 : 		end
+  15 : 		return uxx + uyy + ext
+  16 : 	end,
+  17 : 	function(x,u,uy,ux,i) 
+  18 : 		if i>nxmid-1 then return u
+  19 : 		else return uy end
+  20 : 	end,
+  21 : 	function(x,u,uy,ux,i) return uy end,
+  22 : 	function(y,u,ux,uy,j) 
+  23 : 		if j>nymid-1 then return u-Vm
+  24 : 		else return ux end
+  25 : 	end,
+  26 : 	function(y,u,ux,uy,j) return ux end
+  27 : }
+  28 : Vm = 1.0
+  29 : Nx,Ny = 80,80
+  30 : nx,ny = Nx+1,Ny+1
+  31 : nxmid,nymid = math.ceil(nx/2),math.ceil(ny/2)
+  32 : 
+  33 : x,y = setxy({0,1},{0,1},Nx,Ny)
+  34 : u = Spmat.new(nx,-ny) 
+  35 : for j = 1,ny do	-- Set zero initial values
+  36 : 	u[j] = {}; for i = 1,nx do u[j][i] = 0 end
+  37 : end
+  38 : fxext = 4/(x[nxmid+1]-x[nxmid-1])
+  39 : fyext = 4/(y[nymid+1]-y[nymid-1])
+  40 : 
+  41 : SPM,COE,SOR,ADI = 1, 2, 3, 4 -- 4 solution types 
+  42 : getfenv(pde2bvsor).nprint=1;getfenv(pde2bvcoe).nprint=1
+  43 : u,errm = pde2bv(feqs,x,y,u,COE) -- Replace COE as desired
+  44 : 
+  45 : print(' At end maximum correction =',errm)
+  46 : ut = reversexy(u); splot(ut); cplot(ut)
+  47 : ux,uy = grad(x,y,u)
+  48 : sum = 0.5*(uy[1][nxmid] + uy[1][nx])
+  49 : for i=nxmid+1,nx-1 do sum = sum + uy[1][i] end
+  50 : sum = sum*(x[2]-x[1])
+  51 : print('Eff squares =',1/sum)
+  52 : splot('list12_33.emf',ut); cplot('list12_33a.emf',ut)
+  53 : write_data('list12_33.dat',ut)

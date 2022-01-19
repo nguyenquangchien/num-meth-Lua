@@ -1,0 +1,31 @@
+   1 : -- /* list11_21.lua */
+   2 : -- Solution of semiconductor depletion layer as a BV problem
+   3 : require"odebvfd"; exp = math.exp
+   4 : 
+   5 : L,Na,Nd = 2.e-4, 1e16, 1e18 -- One sided parameters
+   6 : q,eps,vt,ni = 1.6e-19, 11.9*8.854e-14, .026, 1.45e10
+   7 : qdep = q/eps
+   8 : v1,v2 = -vt*math.log(Na/ni), vt*math.log(Nd/ni) -- Boundary values
+   9 : 
+  10 : f = function(x,v,vp,vpp) -- Poisson's equation
+  11 : 	if x<=0 then Nnet = -Na else Nnet = Nd end
+  12 : 	return vpp + qdep*(ni*exp(-v/vt) - ni*exp(v/vt) + Nnet)
+  13 : end
+  14 : 
+  15 : nx1 = 1000; xx = xgp(0,L/2,1.e-9,nx1) -- Non uniform grid on 0 to L/2
+  16 : x,v = {}, {}; i=1 -- Now mirror to negative values
+  17 : for j=nx1+1,1,-1 do x[i] = -xx[j]; i = i+1 end
+  18 : for j=2,nx1+1 do x[i] = xx[j]; i = i+1 end
+  19 : 
+  20 : nx = #x
+  21 : for i=1,nx do -- Initial voltage approximation
+  22 : 	if x[i]<0 then v[i] = v1 else v[i] = v2 end
+  23 : end
+  24 : s,err,nn = ode1fde(f,x,v) -- Solve equations, fixed boundary values
+  25 : p,n = {},{} -- To calculate holes and electrons
+  26 : for i=1,nx do -- Now calculate then
+  27 : 	p[i],n[i] = ni*exp(-s[2][i]/vt),ni*exp(s[2][i]/vt) end
+  28 : 
+  29 : print('Number of Newton iterations = ',nn)
+  30 : plot(s); plot(s[1],n);plot(s[1],p)
+  31 : plot(err);write_data('list11_21.dat',s,err,n,p)

@@ -1,0 +1,19 @@
+   1 : --/* File newton_1.lua */
+   2 : -- Solves a nonlinear equation f(x) = 0 for the solution value x
+   3 : 
+   4 : function newton(f,x)
+   5 : 	local nend,cx,fx = NTT
+   6 : 	for i=1,NTT do
+   7 : 		local dx = x*FACT
+   8 : 		if dx==0.0 then dx = FACT end -- Protect against zero
+   9 : 		fx = f(x)
+  10 : 		cx = fx - f(x+dx)
+  11 : 		cx = fx*dx/cx -- Correction to x value
+  12 : 		x = x + cx
+  13 : 		dx = abs(cx) + abs(x)
+  14 : 		if dx==0.0 or abs(cx/dx)<ERR then nend = i; break end
+  15 : 	end
+  16 : 	return x,nend,cx,fx
+  17 : end
+  18 : setfenv(newton, {abs=(Complex or math).abs,FACT=1.e-6,ERR=1.e-8,
+  19 : 	NTT=200}) -- Make all variables and constants local to newton

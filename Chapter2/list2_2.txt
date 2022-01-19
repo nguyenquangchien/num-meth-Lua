@@ -1,0 +1,33 @@
+   1 : -- /* File list 2.2.lua */
+   2 : -- test of fundamental arithmetic limits with Lua
+   3 : 
+   4 : -- Test for relative accuracy
+   5 : eps = 1
+   6 : while 1 do
+   7 : 	eps = eps/2
+   8 : 	b = 1 + eps
+   9 : 	if b==1 then break end
+  10 : end
+  11 : print("Machine eps = ", 2*eps, math.log(2*eps)/math.log(2))
+  12 : 
+  13 : -- Test for smallest floating point number 
+  14 : nmn,a = 1,1
+  15 : while 1 do
+  16 : 	nmn = nmn/2
+  17 : 	if nmn==0 then break end
+  18 : 	a = nmn
+  19 : end
+  20 : print("Smallest floating point number = ",a,nmn)
+  21 : print("Values around smallest number = ",1.4*a,1.5*a,1.9*a)
+  22 : 
+  23 : -- Test for largest floating point number
+  24 : nmx,a,inf = 1,1,1/0
+  25 : while 1 do
+  26 : 	nmx = nmx*2
+  27 : 	if nmx==inf then break end
+  28 : 	a = nmx
+  29 : end
+  30 : print("Largest floating point number = ",a,nmx)
+  31 : print("Values aroung largest number =",2*(1-eps)*a)
+  32 : 
+  33 : 

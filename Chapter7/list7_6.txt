@@ -1,0 +1,19 @@
+   1 : -- /* File Listing7_6.lua */ -- Signal in noise example
+   2 : 
+   3 : require"fourier"
+   4 : 
+   5 : tpn,tsn = {},{} -- Read signal_noise and signal, 256 points
+   6 : read_data('target_plus_noise.txt',tpn)
+   7 : read_data('target_signal.txt',tsn)
+   8 : fx,fy,fz = fourier(tpn,128) -- Fourier analysize
+   9 : fm,fang = {},{} -- Magnitude and angle of Fourier comp
+  10 : for i=1,#fx do fm[i],fang[i] = fx[i][1],fx[i][2] end
+  11 : plotFourier(fx) -- Plot coefficients
+  12 : ttn = {} -- Generate time points 
+  13 : for i=1,#tpn do ttn[i] = i-1 end
+  14 : plot(ttn,tpn) -- Plot signal plus noise
+  15 : plot(ttn,tsn) -- Plot signal
+  16 : tt,sig = iFourier(fx,256,60) -- Recover signal
+  17 : write_data('list7_6a.dat',fm,fang)
+  18 : plot(tt,sig) -- Plot recovered signal
+  19 : write_data('list7_6b.dat',tt,sig,tpn,tsn)

@@ -1,0 +1,26 @@
+   1 : -- /* File list10_2.lua */
+   2 : -- Programs to explore stability and accuracy for first order differential equations
+   3 : 
+   4 : require"nsolv"; exp = math.exp
+   5 : typ = 'TP' -- Trapeziodal rule -- Sekect as desured
+   6 : --typ = 'BD' -- Backwards difference
+   7 : --typ = 'FD' -- Forward difference
+   8 : 
+   9 : feqs = function(eq, t, y, yp) -- Define differential equations
+  10 : 	eq[1] = yp[1] + 1001*y[1] - 999*y[2]
+  11 : 	eq[2] = yp[2] - 999*y[1] + 1001*y[2]
+  12 : end
+  13 : 
+  14 : h,kmax = 1.e-3, 1000 -- Select desired time scale
+  15 : --h,kmax = 1.e-5, 1000
+  16 : neq,t = 2,0
+  17 : 
+  18 : y = {}; sol = {{t},{1},{1},{},{}} -- Solution array with Initial values
+  19 : for i=1,neq do y[i] = sol[i+1][1] end -- initial y value array
+  20 : 
+  ---------- Same as Listing 10.1
+  46 : for i=1,#sol[1] do 
+  47 : 	f1,f2 = exp(-2*(i-1)*h), exp(-2*(i-1)*h*1000)
+  48 : 	sol[neq+2][i],sol[neq+3][i] = f1 + f2, f1 - f2
+  49 : end
+  50 : write_data('list10.2'..typ..'.dat',sol); plot(sol)

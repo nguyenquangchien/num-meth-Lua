@@ -1,0 +1,33 @@
+   1 : -- /* File pdeivbv.lua */
+------
+ 166 : pdeivbvqs = function(eqsub,tvals,x,u,ut,utt) -- Quick scan log time solver
+ 167 : 	local nps,npts -- save per decade, additional steps per save
+ 168 : 	local ttvals,nl,nu,fact = {}
+ 169 : 	local nt,neq,j = #tvals, #u, 0
+ 170 : 	local nitt,nit,sol = 0 
+ 171 : 	local nprint = nprint or getfenv(pdeivbv).nprint
+ 172 : 	ut = ut or {}; utt = utt or {}
+ 173 : 	if type(u[1])~='table' then u = {u} end -- For single equation
+ 174 : 	if nt<2 then print('Error, must specify two times in pdeivbvqs')
+ 175 : 		return end
+ 176 : 	nps,npts = math.floor(tvals[3] or NPS),math.floor(tvals[4] or NPTS)
+ 177 : 	fact = 10^(1/(nps*npts)) -- Factor between steps
+ 178 : 	nl = 10^(math.floor(math.log10(tvals[2][1])))
+ 179 : 	nu = 10^(math.ceil(math.log10(tvals[2][2])))/fact
+ 180 : 	sol = pdeivbv(eqsub,{tvals[1],nl,1,nps*npts},x,u,ut,utt) -- Initial interval
+ 181 : 	while nl<=nu do -- Step over log time spacings
+ 182 : 		nit = pdebivbv(eqsub,{nl,nl*fact,1},x,u,ut,utt)
+ 183 : 		if nit>nitt then nitt = nit end
+ 184 : 		nl = nl*fact; j = j+1
+ 185 : 		if j==npts then 
+ 186 : 			sol = usave(sol,u); j = 0 -- Save solutions
+ 187 : 			if nprint~=0 then 
+ 188 : 				printf('Time = %e Number of iterations in pdeivbvqs = %d \n\n' ,nl,nitt)
+ 189 : 				io.flush(); nitt = 0
+ 190 : 			end
+ 191 : 		end
+ 192 : 	end
+ 193 : 	return sol
+ 194 : end
+ 195 : setfenv(pdeivbvqs,{pdebivbv=pdebivbv,pdeivbv=pdeivbv,printf=printf,type=type,
+ 196 : math=math,nprint,io=io,NPS=1,NPTS=10,usave=usave,getfenv=getfenv})

@@ -1,0 +1,19 @@
+   1 : --- /* File list10_22.lua */
+   2 : -- Programs to integrate differential equation for pendulum
+   3 : require"odeiv"
+   4 : odebiv = odeb12
+   5 : 
+   6 : g,L,c,m = 983.21, 100, 400, 20
+   7 : dc,w2 = c/(m*L), g/L
+   8 : th0 = 0.95*math.pi
+   9 : 
+  10 : f1 = function(eqs,t,x,xp,xpp)
+  11 : 	eqs[1] = xpp[1] + dc*xp[1] + w2*math.sin(x[1])
+  12 : 	eqs[2] = xpp[2] + dc*xp[2] + w2*x[2] 
+  13 : 	eqs[3] = xpp[3] + w2*math.sin(x[3]) -- No Damping
+  14 : 	eqs[4] = xpp[4] + w2*x[4] -- No Damping
+  15 : end
+  16 : 
+  17 : s1,err1 = odeivse(f1,{0,20},{th0,th0,th0,th0},{0,0,0,0})
+  18 : plot(s1)
+  19 : write_data("list10_23.dat",s1)

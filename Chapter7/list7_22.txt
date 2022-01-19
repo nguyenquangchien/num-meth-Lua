@@ -1,0 +1,19 @@
+   1 : -- /* File list7_22.lua */ -- datafit() to transistor data
+   2 : 
+   3 : require "DataFit"
+   4 : xd,yd={},{{},{},{},{},{},{},{},{},{}}
+   5 : nd = read_data('mosidd1.5.0.6.dat',xd,unpack(yd))
+   6 : xx,yy = {},{{},{},{},{},{},{},{},{},{}}
+   7 : xmin,xmax,nx = xd[1],xd[nd],1000
+   8 : dx = (xmax-xmin)/nx
+   9 : for i=1,nx do xx[i] = xmin+dx*(i-1) end
+  10 : ncrv,fxc = #yd, {}
+  11 : for j=1,ncrv do
+  12 : 	fxc[j] = datafit{yd[j],xd}
+  13 : end
+  14 : for j=1,ncrv do	
+  15 : 	for i=1,nx do yy[j][i] = fxc[j](xx[i]) end
+  16 : end
+  17 : plot(xx,unpack(yy))
+  18 : write_data("list7_22.dat",xx,unpack(yy)) -- Save data 
+  19 : 

@@ -1,0 +1,33 @@
+   1 : -- /* File list12_7.lua */
+   2 : -- Programs to integrate diffusion equation in one spatial variable
+   3 : 
+   4 : require"pdeivbv"; require'odebvfd'
+   5 : require"elemfunc"; erfc = elemfunc.erfc
+   6 : getfenv(pdeivbv).nprint = 1; getfenv(pdeivbvqs).nprint=1
+   7 : getfenv(ode2bvfd).NMAX = 1 -- Only one iteration required
+   8 : -- Model equations to be solved
+   9 : L,D = 1,1; u = {}
+  10 : 
+  11 : eq = function(fu,x,t,u,up,upp,ut) -- Equations with time and spatial derivatives
+  12 : 	fu[1] = ut[1] - D*upp[1] -- Diffusion equation
+  13 : end
+  14 : efl = function(fu,u,up) -- Left boundary fixed at 1.0
+  15 : 	fu[1] = u[1] - 1.0
+  16 : end
+  17 : efr = function(fu,u,up) -- Right boundary, fixed at 0.0
+  18 : 	fu[1] = u[1] - 0.0  
+  19 : end
+  20 : 
+  21 : Nx = 400; Nt = 20
+  22 : x1 = xlg(0,1,1.e-6,Nx) -- Set up x and u arrays
+  23 : for i=1,Nx+1 do u[i] = 0.0 end 
+  24 : sol1 = pdeivbvqs({eq,efl,efr},{0,{1.e-6,1.e-2},1,Nt},x1,u)
+  25 : 
+  26 : Nx = 200; Nt = 10 -- Half spatial steps, half time steps
+  27 : x2 = xlg(0,1,1.e-6,Nx) -- Set up x and u arrays
+  28 : for i=1,Nx+1 do u[i] = 0.0 end 
+  29 : sol2 = pdeivbvqs({eq,efl,efr},{0,{1.e-6,1.e-2},1,Nt},x2,u)
+  30 : 
+  31 : err1 = odeerror({x1,sol1[3]},{x2,sol2[3]}) -- t = 1.e-6
+  32 : err2 = odeerror({x1,sol1[7]},{x2,sol2[7]}) -- t = 1.e-2
+  33 : write_data('list12_7.dat',err1,err2)

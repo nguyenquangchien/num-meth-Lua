@@ -1,0 +1,29 @@
+   1 : -- /* File Data_Fit.lua */
+---------
+  35 : refitdata = function(yx,intpf,xcc) -- Add two additional knots for each call
+  36 : 	local j,nd = 0,#yx[1]
+  37 : 	local xmin,xmax = 0,0
+  38 : 	local c,nc = xcc[2],#xcc[2]
+  39 : 	local xc,del -- Needed for interpolation function
+  40 : 	local fdf = function(yx,c)  -- Interpolation function for datafit()
+  41 : 		return intp(xc,c,yx[2])-yx[1] -- Interpolation function with set of knots
+  42 : 	end
+  43 : 	xc = xcc[1] -- Global value for fdf
+  44 : 	for i=2,nc-1 do -- Find point of maximum second derivative change
+  45 : 		xmin = math.abs(intpf(xc[i]*(1.001),2) - intpf(xc[i]*(.9999),2))
+  46 : 		if xmin>xmax then j = i; xmax = xmin end
+  47 : 	end
+  48 : 	table.insert(xc,j+1,(xc[j+1] + xc[j])*.5) -- Add first point
+  49 : 	table.insert(xc,j,(xc[j] + xc[j-1])*.5)  -- Two additional points now in xc 
+  50 : 	table.insert(c,j+1,0); table.insert(c,j,0)
+  51 : 	nc = nc + 2
+  52 : 	del,err = nlstsq(yx,fw,fdf,c) -- call data fit with 2 extra knots
+  53 : 	return function(x,df) return intp(xc,c,x,df) end, {xc, c, del}, err -- f(x)
+  54 : end
+  55 : datafitn = function(yx,na,nc)
+  56 : 	local intpf,xcc,err = datafit(yx,nc)
+  57 : 	for i=1,na do
+  58 : 		intpf,xcc,err = refitdata(yx,intpf,xcc)
+  59 : 	end
+  60 : 	return intpf,xcc,err
+  61 : end

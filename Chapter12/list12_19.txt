@@ -1,0 +1,65 @@
+   1 : -- /* File list12_19.lua */
+   2 : -- Program for Schrodinger Wave Equation with barrier
+   3 : 
+   4 : require"Complex"; math.abs = Complex.abs -- Complex algebra
+   5 : require"odefd"; require"pdeivbv"
+   6 : require"intp"; require"intg"
+   7 : getfenv(pdeivbv).nprint = 1
+   8 : getfenv(pdebbviv).umin = {5.e-4,5.e-4,5.e-4}
+   9 : getfenv(odefd).NMAX = 1
+  10 : 
+  11 : tomagsq = function(s) -- Convert to magnitude squared
+  12 : 	ns,nv = #s, #s[2]
+  13 : 	for i=2,ns do 
+  14 : 		for k=1,nv do s[i][k] = math.abs(s[i][k])^2 end
+  15 : 	end
+  16 : 	return s
+  17 : end
+  18 : sqarea = function(x,y) -- Calculate area under wavefunction
+  19 : 	local nx, sum = #x-1, 0
+  20 : 	for i=1,nx	do -- works for nonumiform spatial grid
+  21 : 		sum = sum + (x[i+1]-x[i])*(math.abs(y[i+1])^2+math.abs(y[i])^2)
+  22 : 	end
+  23 : 	return sum/2
+  24 : end
+  25 : 
+  26 : xb, barrier = 0.02, -1.2e4
+  27 : -- Normalized Schrodinger equation to be solved
+  28 : eq = function(fv,x,t,v,vp,vpp,vt) 
+  29 : 	if x>=0 and x<xb then b = barrier else b = 0 end
+  30 : 	fv[1] = j*vt[1] + vpp[1] + b*v[1] 
+  31 : end
+  32 : efl = function(fv,v,vp) -- Zero boundary value
+  33 : 	fv[1] = v[1]
+  34 : end
+  35 : efr = function(fv,v,vp) -- Zero boundary value
+  36 : 	fv[1] = v[1]
+  37 : end
+  38 : 
+  39 : x = {}; nx = 2000 -- Set initial parameters
+  40 : L, alf, bet = 1, 75, 100
+  41 : xo = .5*L
+  42 : for i=1,nx+1 do x[i] = L*(-1 + (i-1)*2/nx) end
+  43 : 
+  44 : v = {{}} -- Set initial voltage values
+  45 : vp,vpp = {{}}, {{}}
+  46 : for i=1,nx+1 do
+  47 : 	xv = x[i]
+  48 : 	v[1][i] = math.exp(-alf*(xv+xo)^2)*Complex.exp(bet*j*xv)
+  49 : end
+  50 : v[1][1] = Complex.new(0,0); v[1][nx+1] = v[1][1]
+  51 : 
+  52 : sum =sqarea(x,v[1])^0.5; print('P = ',sum)
+  53 : for i=1,nx+1 do v[1][i] = v[1][i]/sum end
+  54 : print('Now P = ',sqarea(x,v[1]))
+  55 : 
+  56 : tvals = {0,{1.e-6,1.e-5},1,5} -- Starter solution, to conserve P
+  57 : s = pdeivbvqs({eq,efl,efr},tvals,x,v,vp,vpp)
+  58 : sum = sqarea(s[1],s[3]); print('After initial short interval, P = ',sum)
+  59 : 
+  60 : tvals = {0,.02,40,40,{-.75,-.5,-.25,0,.25,.5,.75}}
+  61 : s,st = pdeivbvt({eq,efl,efr},tvals,x,v,vp,vpp)
+  62 : sum = sqarea(s[1],s[table.getn(s)]); print('After final solution, P = ',sum)
+  63 : 
+  64 : write_data('list12_19.dat',tomagsq(s)) -- Save data as probability density
+  65 : write_data('list12_19t.dat',tomagsq(st))

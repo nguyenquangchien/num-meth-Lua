@@ -1,0 +1,17 @@
+   1 : -- /* File list10_16.lua */
+   2 : -- Programs to integrate first order diff. equation using odebrk()
+   3 : require"odeiv"
+   4 : odebiv = odebrk
+   5 : 
+   6 : f1 = function(eqs,t,y,yp) --  equation for cos(t), sin(t)
+   7 : 	eqs[1] = yp[1] - y[2]
+   8 : 	eqs[2] = yp[2] + y[1]
+   9 : end
+  10 : -- RK solution with one step interval, also error evaluation
+  11 : s1,err1 = odeive(f1,{0,100,2000},{1,0})
+  12 : print(errstat(err1[2]))
+  13 : s2,err2 = odeive(f1,{0,100,1000},{1,0})
+  14 : print(errstat(err2[2]))
+  15 : plot(s1[1],s1[2],err1[2])
+  16 : 
+  17 : write_data("list10_16.dat",s1,err1,s2,err2)

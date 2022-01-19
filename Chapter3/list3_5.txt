@@ -1,0 +1,24 @@
+   1 : -- /* list3_5.lua */
+   2 :    
+   3 : require"Complex"; require"newton_1"
+   4 : -- Cube root of 1X10^20
+   5 : function f1(x) return x^3 - 1.E20 end 
+   6 : print('f1',newton(f1,1.e10))
+   7 : -- Real and complex roots of 4th degree polynomial   
+   8 : function f2(x) return 5*x^4 - 4*x^2 + 2*x -3 end
+   9 : print('f2',newton(f2,2))
+  10 : print('f2',newton(f2,j))
+  11 : print('f2',newton(f2,-j))
+  12 : -- Function that varies rapidly with x
+  13 : function f3(x) return math.exp(10*x)*(1-.5*x) -1 end
+  14 : print('f3',newton(f3,4))
+  15 : -- Rearranged f3 for more linear function
+  16 : function f4(x) return (1-.5*x) - math.exp(-10*x) end
+  17 : print('f4',newton(f4,4))
+  18 : -- Linear equation
+  19 : function f5(x) return 5*x - math.pi end
+  20 : print('f5',newton(f5,0))
+  21 : -- Complex roots of 2nd degree polynomial
+  22 : function f6(x) return x^2 -4*x + 13 end
+  23 : print('f6',newton(f6,j))
+  24 : print('f6',newton(f6,-j))

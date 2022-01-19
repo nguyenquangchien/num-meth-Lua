@@ -1,0 +1,42 @@
+   1 : -- File list12_30.lua -- Example of time dependent BV problem in 2 dimensions 
+   2 : 
+   3 : require"pde2bv" 
+   4 : Um = 1.0 -- Define equations to be solved
+   5 : D = 20 -- Constant diffusion coefficient
+   6 : xmax,ymax = 2.0,1.0
+   7 : feqs = { -- Table of functions
+   8 : 	function(x,y,t,uxx,ux,u,uy,uyy,ut,utt,i,j) -- General point
+   9 : 		return -ut + D*(uxx + uyy)
+  10 : 	end,
+  11 : 	function(x,t,u,uy,ux,i) return uy end, -- Bottom boundary
+  12 : 	function(x,t,u,uy,ux,i) -- Top boundary
+  13 : 		if x>=xmax/2 then return u-Um else return uy end end,
+  14 : 	function(y,t,u,ux,uy,j) return ux end, -- Left boundary
+  15 : 	function(y,t,u,ux,uy,j) return ux end  -- Right boundary
+  16 : }  -- End general point and boundary values
+  17 : 
+  18 : Nx,Ny = 100,50 -- Change as desired
+  19 : nx,ny = Nx+1,Ny+1
+  20 : x,y = setxy({0,xmax},{0,ymax},Nx,Ny)
+  21 : u = {}; u[0] = {nx, ny, 1} -- Include size information 
+  22 : for j = 1,ny do	-- Set zero initial values
+  23 : 	u[j] = {}; for i = 1,nx do u[j][i] = 0 end
+  24 : end
+  25 : SPM,COE,SOR,ADI = 1, 2, 3, 4 -- possible solution methods 
+  26 : t = os.time()
+  27 : getfenv(pde2bv1tqs).nprint=1
+  28 : getfenv(pde2bv1tqs).seeplot = 2 -- Uncomment for popup plots
+  29 : tvals = {0,{1.e-4,1.e-1},2,10,{{0,.5},{0,1},{2,0},{2,.75},{2,1},{1,.5},{1,.75},}}
+  30 : u,uxyt,errm = pde2bv1tqs(feqs,tvals,x,y,u,COE)
+  31 : --tvals = {0,{.001,.01},5} -- Use these for linear time intervals
+  32 : --u,errm = pde2bv1t(feqs,tvals,x,y,u,COE)
+  33 : 
+  34 : print('Time taken =',os.time()-t); io.flush()
+  35 : nsol = #u -- Number of time solutions saved
+  36 : for i=1,nsol do -- Save 2D data files
+  37 : 	sfl = 'list12_30.'..i..'.dat'
+  38 : 	write_data(sfl,reversexy(u[i])) -- note reversexy() before save
+  39 : end
+  40 : splot('list12_30a.emf',reversexy(u[5]))
+  41 : cplot('list12_30b.emf',reversexy(u[5]))
+  42 : write_data('list12_30a.dat',uxyt) -- Save t dependent data

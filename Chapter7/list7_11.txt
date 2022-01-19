@@ -1,0 +1,23 @@
+   1 : -- /* File list7_11.lua */ -- Data fitting for Figure 7.1
+   2 : 
+   3 : require"nlstsq_new"
+   4 : 
+   5 : xd,yd = {},{}
+   6 : read_data('list7_1.dat',xd,yd)
+   7 : 
+   8 : ft = function(x,c) -- Define function to fit data
+   9 : 	return c[1]*(1 - c[2]*math.exp(c[3]*x[2])) - x[1]
+  10 : end
+  11 : 
+  12 : c = {1,1,-.2} -- Initial guess at coefficients
+  13 : actv = {1,1,1}
+  14 : del,err,nmax = nlstsq({yd,xd},fw,ft,c,actv) -- Call fiting 
+  15 : print(err,nmax) -- print results
+  16 : for i=1,#c do printf('c[%d] = %12.4e +/- %12.4e\n',i,c[i],del[i]) end
+  17 : ycalc = {}
+  18 : for i=1,#xd do 
+  19 : 	x = {0,xd[i]}
+  20 : 	ycalc[i] = ft(x,c)
+  21 : end
+  22 : write_data('list7_11.dat',xd,yd,ycalc)
+  23 : plot(xd,yd,ycalc)

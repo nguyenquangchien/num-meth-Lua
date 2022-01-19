@@ -1,0 +1,64 @@
+   1 : -- /* File pdeivbv.lua */
+   2 : -- Programs to solve partial differential equations of the form initial value, boundary value in two variables
+   3 : require"odefd"; require"intp"
+   4 : pdebivbv = function(eqsub,tvals, x,u,ut,utt) -- Basic time step solver for partial differential equation
+   5 : 	local neq,nx,nut,nutt,t,h,h2,h2sq,hs,att,btt,at = #u, #x, #ut, #utt
+   6 : 	local nit,nitt,eqsu = 0,0, eqsub[1] -- Number of iterations
+   7 : 	local fu,xt,xtt,uti,utti = {},{},{},{},{}
+   8 : 	eqtr = function(fu,x,u,ux,uxx,i) -- Map of time differentials into spatial values
+   9 : 		for m=1,neq do 
+  10 : 			uti[m] = (u[m] - xt[m][i])/h2 -- h2 = h/2 for trapezoidal rule, h for Backwards differencing
+  11 : 			utti[m] = (u[m] - xtt[m][i])/h2sq -- Second derivative
+  12 : 		end; eqsu(fu,x,t,u,ux,uxx,uti,utti) -- Call defining equation set, returning fu values
+  13 : 	end
+  14 : 	eqbl = function(fu,u,ux) -- map left boundary condition
+  15 : 		for m=1,neq do
+  16 : 			uti[m] = (u[m] - xt[m][1])/h2 -- Left time derivative
+  17 : 		end; eqsub[2](fu,u,ux,t,uti)
+  18 : 	end
+  19 : 	eqbr = function(fu,u,ux) -- map right boundary condition
+  20 : 		for m=1,neq do
+  21 : 			uti[m] = (u[m] - xt[m][nx])/h2 -- Left time derivative
+  22 : 		end; eqsub[3](fu,u,ux,t,uti)
+  23 : 	end
+  24 : 	local eqsx = {eqtr,eqbl,eqbr}
+  25 : 	local tmin,tmax,ntval = tvals[1],tvals[2],tvals[3]
+  26 : 	t,hs = tmin, (tmax-tmin)/ntval  -- Initial t value
+  27 : 	if nutt~=neq then for m=1,neq do utt[m] = {} end end
+  28 : 	if nut~=neq then for m=1,neq do ut[m] = {} end end
+  29 : 	for m=1,neq do
+  30 : 		if #utt[m]~=nx then nutt = 0; for k=1,nx do utt[m][k] = 0 end end
+  31 : 		if #ut[m]~=nx then nut = 0; for k=1,nx do ut[m][k] = 0 end end
+  32 : 	end
+  33 : 	if nutt~=neq then -- utt aray not input, use backwards difference initially
+  34 : 		jfirst,h,h2,h2sq,att,at,btt=0,hs/4,hs/4,(hs/4)^2,hs/4,0,0
+  35 : 	else jfirst,h,h2,h2sq,att,at,btt=4,hs,hs/2,(hs/2)^2,hs,hs/2,(hs/2)^2 end
+  36 : 	for m=1,neq do xt[m],xtt[m],fu[m] = {},{},0 end 
+  37 : 	for k=1,ntval do -- Beginning of major time loop -- Heart of solution
+  38 : 		repeat -- Use Backwards differencing for first interval with 4 sub intervals
+  39 : 			jfirst = jfirst+1
+  40 : 			for i=1,nx do -- Set up xx arrays for use in replacing time derivatives
+  41 : 				for m=1,neq do
+  42 : 					xt[m][i] = u[m][i] + at*ut[m][i]
+  43 : 					xtt[m][i] = u[m][i] + att*ut[m][i] + btt*utt[m][i]
+  44 : 				end
+  45 : 			end -- These are used by eqtr() function when called
+  46 : 			t = t + h -- Now increment t to next t value
+  47 : 			nitt = ode2bvfd(eqsx,x,u) -- Calculate new u values, returned in u array
+  48 : 			if nitt>nit then nit = nitt end -- Monitor maximum number of iterations
+  49 : 			if nprint~=0 then 
+  50 : 				printf('Time = %e Number of iterations in pdebivbv = %d \n\n' ,t,nitt)
+  51 : 				io.flush()
+  52 : 			end
+  53 : 			for i=1,nx do -- Now calculate derivative values at new time point
+  54 : 				for m=1,neq do
+  55 : 					ut[m][i] = (u[m][i] - xt[m][i])/h2 
+  56 : 					utt[m][i] = (u[m][i] - xtt[m][i])/h2sq
+  57 : 				end
+  58 : 			end
+  59 : 		until jfirst>=4 -- End of first interval with Backwards differencing
+  60 : 		if k==1 then h,h2,h2sq,att,at,btt=hs,hs/2,(hs/2)^2,hs,hs/2,(hs/2)^2 end
+  61 : 	end -- End of major loop, Go back and do for another time
+  62 : 	return nit, tmax, tmin, ntval
+  63 : end	-- End of function	
+  64 : setfenv(pdebivbv,{ode2bvfd=ode2bvfd,printf=printf,type=type,nprint=0,io=io,plot=plot})
